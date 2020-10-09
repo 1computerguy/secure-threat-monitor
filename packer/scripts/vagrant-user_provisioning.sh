@@ -6,7 +6,7 @@ HOME_DIR="/home/monadmin"
 groupadd monadmin
 
 # Set up a monadmin user and add the insecure key for User to login
-useradd -G monadmin -m '1qaz2wsx!QAZ@WSX'
+useradd -G monadmin -m monadmin
 
 # Avoid password expiration (https://github.com/vmware/photon-packer-templates/issues/2)
 chage -I -1 -m 0 -M 99999 -E -1 monadmin
