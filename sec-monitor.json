@@ -1,13 +1,22 @@
 {
     "variables": {
-      "iso_file": "",
-      "iso_sha1sum": "",
-      "product_version": "",
-      "root_password": "1qaz2wsx!QAZ@WSX",
+      "iso_file": "./packer/ISO/photon-minimal-3.0.iso",
+      "iso_checksum": "C2883A42E402A2330D9C39B4D1E071CF9B3B5898",
+      "iso_checksum_type": "sha1",
+      "product_version": "3.0",
+      "ssh_username": "root",
+      "ssh_password": "1qaz2wsx!QAZ@WSX",
       "ramsize": 16,
       "numvcpus": 4,
-      "disksize": 122880,
-      "vmname": "Secure Traffic Monitor"
+      "disksize": 204800,
+      "vmname": "Secure Traffic Monitor",
+      "host_portgroup": "Management",
+      "monitor_portgroup": "Monitor",
+      "eth_type": "vmxnet3",
+      "esx_host": "192.168.1.101",
+      "esx_datastore": "datastore0",
+      "esx_username": "root",
+      "esx_password": "1qaz2wsx!QAZ@WSX"
     },
   "builders": [
     {
@@ -20,10 +29,10 @@
       "disk_type_id": 0,
       "guest_os_type": "vmware-photon-64",
       "iso_url": "{{user `iso_file`}}",
-      "iso_checksum": "{{user `iso_sha1sum`}}",
-      "iso_checksum_type": "sha1",
-      "ssh_username": "root",
-      "ssh_password": "{{user `root_password`}}",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "ssh_username": "{{user `ssh_username`}}",
+      "ssh_password": "{{user `ssh_password`}}",
       "ssh_wait_timeout": "60m",
       "boot_wait": "5s",
       "shutdown_command": "shutdown -h now",
@@ -33,8 +42,8 @@
         "memsize": "{{ user `ramsize` }}",
         "numvcpus": "{{ user `numvcpus` }}",
         "scsi0.virtualDev": "pvscsi",
-        "ethernet0.virtualDev": "vmxnet3",
-        "ethernet1.virtualDev": "vmxnet3"
+        "ethernet0.virtualDev": "{{ user `eth_type` }}",
+        "ethernet1.virtualDev": "{{ user `eth_type` }}"
         },
       "vmx_data_post": {
         "displayname": "{{ user `vmname` }}",
@@ -61,31 +70,36 @@
         "boot_wait": "10s",
         "headless": false,
         "vnc_disable_password": true,
-        "iso_url": "{{ user `iso_url` }}",
+        "iso_url": "{{ user `iso_file` }}",
         "iso_checksum": "{{ user `iso_checksum` }}",
         "iso_checksum_type": "{{ user `iso_checksum_type` }}",
         "http_directory": "http",
         "remote_type": "esx5",
-        "remote_host": "{{ user `builder_host` }}",
-        "remote_datastore": "{{ user `host_datastore` }}",
-        "remote_username": "{{ user `host_username` }}",
-        "remote_password": "{{ user `host_password` }}",
-        "ssh_username": "{{ user `guest_username` }}",
-        "ssh_password": "{{ user `guest_password` }}",
+        "remote_host": "{{ user `esx_host` }}",
+        "remote_datastore": "{{ user `esx_datastore` }}",
+        "remote_username": "{{ user `esx_username` }}",
+        "remote_password": "{{ user `esx_password` }}",
+        "ssh_username": "{{ user `ssh_username` }}",
+        "ssh_password": "{{ user `ssh_password` }}",
         "ssh_port": 22,
         "ssh_wait_timeout": "60m",
         "format": "ovf",
         "shutdown_command": "/sbin/shutdown -h now",
-        "shutdown_timeout": "1000s",
         "vmx_data": {
           "numvcpus": "{{ user `numvcpus` }}",
           "memsize": "{{ user `ramsize` }}",
-          "ethernet0.networkName": "{{ user `host_portgroup` }}",
+          "ethernet0.networkName": "{{ user `esx_portgroup` }}",
           "ethernet0.present": "TRUE",
           "ethernet0.startConnected": "TRUE",
-          "ethernet0.virtualDev": "vmxnet3",
+          "ethernet0.virtualDev": "{{ user `eth_type` }}",
           "ethernet0.addressType": "generated",
           "ethernet0.wakeOnPcktRcv": "FALSE",
+          "ethernet1.networkName": "{{ user `monitor_portgroup` }}",
+          "ethernet1.present": "TRUE",
+          "ethernet1.startConnected": "TRUE",
+          "ethernet1.virtualDev": "{{ user `eth_type` }}",
+          "ethernet1.addressType": "generated",
+          "ethernet1.wakeOnPcktRcv": "FALSE",
           "annotation": "Version: {{ user `version` }}"
         }
       },
@@ -98,10 +112,10 @@
         "disk_size": "{{ user `disksize` }}",
         "guest_os_type": "Linux_64",
         "iso_url": "{{user `iso_file`}}",
-        "iso_checksum": "{{user `iso_sha1sum`}}",
-        "iso_checksum_type": "sha1",
-        "ssh_username": "root",
-        "ssh_password": "{{user `root_password`}}",
+        "iso_checksum": "{{user `iso_checksum`}}",
+        "iso_checksum_type": "{{user `iso_checksum_type`}}",
+        "ssh_username": "{{user `ssh_username`}}",
+        "ssh_password": "{{user `ssh_password`}}",
         "ssh_wait_timeout": "60m",
         "boot_wait": "5s",
         "http_directory": "scripts",
@@ -134,22 +148,22 @@
     },
     {
       "type": "shell",
-      "only": ["vagrant-vmware_desktop", "vagrant-virtualbox"],
+      "only": ["vmware-desktop", "virtualbox", "vmware-esxi"],
       "script": "scripts/photon-vagrant-user_provisioning.sh"
     },
     {
       "type": "shell",
-      "only": ["vagrant-vmware_desktop"],
+      "only": ["vmware-desktop", "vmware-esxi"],
       "script": "scripts/photon-sharedfolders_prep.sh"
     },
     {
       "type": "shell",
-      "only": ["vagrant-virtualbox"],
+      "only": ["virtualbox"],
       "script": "scripts/photon-vagrant-vbox_additions.sh"
     },
     {
       "type": "file",
-      "only": ["vagrant-virtualbox"],
+      "only": ["virtualbox"],
       "source": "scripts/photon-virtualbox-load-module.conf",
       "destination": "/etc/modules-load.d/virtualbox.conf"
     },
@@ -173,7 +187,7 @@
   "post-processors": [
     {
       "type": "vagrant",
-      "only": ["vagrant-vmware_desktop", "vagrant-virtualbox"],
+      "only": ["vmware-desktop", "virtualbox", "vmware-esxi"],
       "compression_level": 9,
       "vagrantfile_template": "scripts/photon-vagrantfile.rb",
       "output": "photon-{{user `product_version`}}-{{.BuildName}}.box"
