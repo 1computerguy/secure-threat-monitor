@@ -12,3 +12,10 @@ crash.log
 
 *.7z
 *.zip
+
+# VMware files
+*.log
+*.vmem
+*.nvram
+*.vmdk
+*.vmx
