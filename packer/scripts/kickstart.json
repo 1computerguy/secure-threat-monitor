@@ -1,4 +1,5 @@
 {
+    "install_linux_esx": true,
     "hostname": "secure-traffic-mon",
     "password":
         {
@@ -6,7 +7,8 @@
             "text": "1qaz2wsx!QAZ@WSX"
         },
     "disk": "/dev/sda",
-    "type": "minimal",
+    "packagelist_file": "packages_minimal.json",
+    "additional_packages": ["git"],
     "postinstall": [
                     "#!/bin/sh",
                     "sed -i 's/PermitRootLogin no/PermitRootLogin yes/g' /etc/ssh/sshd_config",
