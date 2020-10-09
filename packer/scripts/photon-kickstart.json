@@ -1,0 +1,15 @@
+{
+    "hostname": "secure-traffic-mon",
+    "password":
+        {
+            "crypted": false,
+            "text": "1qaz2wsx!QAZ@WSX"
+        },
+    "disk": "/dev/sda",
+    "type": "minimal",
+    "postinstall": [
+                    "#!/bin/sh",
+                    "sed -i 's/PermitRootLogin no/PermitRootLogin yes/g' /etc/ssh/sshd_config",
+                    "systemctl restart sshd.service"
+                   ]
+}
