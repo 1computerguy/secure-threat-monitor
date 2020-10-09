@@ -1,196 +1,216 @@
 {
-    "variables": {
-      "iso_file": "./packer/ISO/photon-minimal-3.0.iso",
+  "variables": {
+      "disksize": "204800",
+      "esx_datastore": "datastore0",
+      "esx_host": "192.168.1.101",
+      "esx_password": "1qaz2wsx!QAZ@WSX",
+      "esx_username": "root",
+      "eth_type": "vmxnet3",
+      "host_portgroup": "Management",
       "iso_checksum": "C2883A42E402A2330D9C39B4D1E071CF9B3B5898",
       "iso_checksum_type": "sha1",
-      "product_version": "3.0",
-      "ssh_username": "root",
-      "ssh_password": "1qaz2wsx!QAZ@WSX",
-      "ramsize": "16",
-      "numvcpus": "4",
-      "disksize": "204800",
-      "vmname": "Secure Traffic Monitor",
-      "host_portgroup": "Management",
+      "iso_file": "./packer/ISO/photon-minimal-3.0.iso",
       "monitor_portgroup": "Monitor",
-      "eth_type": "vmxnet3",
-      "esx_host": "192.168.1.101",
-      "esx_datastore": "datastore0",
-      "esx_username": "root",
-      "esx_password": "1qaz2wsx!QAZ@WSX"
-    },
+      "numvcpus": "4",
+      "product_version": "3.0",
+      "ramsize": "16",
+      "ssh_password": "1qaz2wsx!QAZ@WSX",
+      "ssh_username": "root",
+      "vmname": "Secure Traffic Monitor"
+  },
   "builders": [
     {
-      "name": "vmware-desktop",
-      "vm_name": "{{ user `vmname` }}",
-      "vmdk_name": "sec-monitor-disk1",
-      "type": "vmware-iso",
-      "headless": false,
+      "boot_command": [
+        "<esc><wait>",
+        "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/photon-kickstart.json",
+        "<enter>"
+      ],
+      "boot_wait": "5s",
       "disk_size": "{{ user `disksize` }}",
       "disk_type_id": 0,
       "guest_os_type": "vmware-photon-64",
-      "iso_url": "{{user `iso_file`}}",
-      "iso_checksum": "{{user `iso_checksum`}}",
-      "iso_checksum_type": "{{user `iso_checksum_type`}}",
-      "ssh_username": "{{user `ssh_username`}}",
-      "ssh_password": "{{user `ssh_password`}}",
-      "ssh_wait_timeout": "60m",
-      "boot_wait": "5s",
-      "shutdown_command": "shutdown -h now",
+      "headless": false,
       "http_directory": "scripts",
+      "iso_checksum": "{{user `iso_checksum_type`}}:{{user `iso_checksum`}}",
+      "iso_url": "{{user `iso_file`}}",
+      "name": "vmware-desktop",
+      "shutdown_command": "shutdown -h now",
+      "ssh_password": "{{user `ssh_password`}}",
+      "ssh_timeout": "60m",
+      "ssh_username": "{{user `ssh_username`}}",
+      "type": "vmware-iso",
       "version": 16,
+      "vm_name": "{{ user `vmname` }}",
+      "vmdk_name": "sec-monitor-disk1",
       "vmx_data": {
+        "ethernet0.virtualDev": "{{ user `eth_type` }}",
+        "ethernet1.virtualDev": "{{ user `eth_type` }}",
         "memsize": "{{ user `ramsize` }}",
         "numvcpus": "{{ user `numvcpus` }}",
-        "scsi0.virtualDev": "pvscsi",
-        "ethernet0.virtualDev": "{{ user `eth_type` }}",
-        "ethernet1.virtualDev": "{{ user `eth_type` }}"
-        },
+        "scsi0.virtualDev": "pvscsi"
+      },
       "vmx_data_post": {
         "displayname": "{{ user `vmname` }}",
         "usb.present": "false"
-        },
-        "boot_command": [
-          "<esc><wait>",
-          "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/photon-kickstart.json",
-          "<enter>"
-        ]
-    },
-    {
-        "name": "vmware-esxi",
-        "type": "vmware-iso",
-        "vm_name": "{{ user `vmname` }}",
-        "guest_os_type": "vmware-photon-64",
-        "version": "16",
-        "disk_size": "{{ user `disksize` }}",
-        "boot_command": [
-          "<esc><wait>",
-          "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/photon-kickstart.json photon.media=cdrom",
-          "<enter>"
-        ],
-        "boot_wait": "10s",
-        "headless": false,
-        "vnc_disable_password": true,
-        "iso_url": "{{ user `iso_file` }}",
-        "iso_checksum": "{{ user `iso_checksum` }}",
-        "iso_checksum_type": "{{ user `iso_checksum_type` }}",
-        "http_directory": "http",
-        "remote_type": "esx5",
-        "remote_host": "{{ user `esx_host` }}",
-        "remote_datastore": "{{ user `esx_datastore` }}",
-        "remote_username": "{{ user `esx_username` }}",
-        "remote_password": "{{ user `esx_password` }}",
-        "ssh_username": "{{ user `ssh_username` }}",
-        "ssh_password": "{{ user `ssh_password` }}",
-        "ssh_port": 22,
-        "ssh_wait_timeout": "60m",
-        "format": "ovf",
-        "shutdown_command": "/sbin/shutdown -h now",
-        "vmx_data": {
-          "numvcpus": "{{ user `numvcpus` }}",
-          "memsize": "{{ user `ramsize` }}",
-          "ethernet0.networkName": "{{ user `esx_portgroup` }}",
-          "ethernet0.present": "TRUE",
-          "ethernet0.startConnected": "TRUE",
-          "ethernet0.virtualDev": "{{ user `eth_type` }}",
-          "ethernet0.addressType": "generated",
-          "ethernet0.wakeOnPcktRcv": "FALSE",
-          "ethernet1.networkName": "{{ user `monitor_portgroup` }}",
-          "ethernet1.present": "TRUE",
-          "ethernet1.startConnected": "TRUE",
-          "ethernet1.virtualDev": "{{ user `eth_type` }}",
-          "ethernet1.addressType": "generated",
-          "ethernet1.wakeOnPcktRcv": "FALSE",
-          "annotation": "Version: {{ user `version` }}"
-        }
-      },
-      {
-        "name": "virtualbox",
-        "vm_name": "{{ user `vmname` }}",
-        "type": "virtualbox-iso",
-        "headless": false,
-        "hard_drive_interface": "scsi",
-        "disk_size": "{{ user `disksize` }}",
-        "guest_os_type": "Linux_64",
-        "iso_url": "{{user `iso_file`}}",
-        "iso_checksum": "{{user `iso_checksum`}}",
-        "iso_checksum_type": "{{user `iso_checksum_type`}}",
-        "ssh_username": "{{user `ssh_username`}}",
-        "ssh_password": "{{user `ssh_password`}}",
-        "ssh_wait_timeout": "60m",
-        "boot_wait": "5s",
-        "http_directory": "scripts",
-        "shutdown_command": "shutdown -h now",
-        "vboxmanage": [
-            [
-              "modifyvm",
-              "{{.Name}}",
-              "--memory",
-              "{{ user `ramsize` }}"
-            ],
-            [
-              "modifyvm",
-              "{{.Name}}",
-              "--cpus",
-              "{{ user `numvcpus` }}"
-            ]
-        ],
-        "boot_command": [
-          "<esc><wait>",
-          "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/photon-kickstart.json",
-          "<enter>"
-        ]
       }
-  ],
-    "provisioners": [
-    {
-      "type": "shell",
-      "script": "scripts/photon-package_provisioning.sh"
     },
     {
-      "type": "shell",
-      "only": ["vmware-desktop", "virtualbox", "vmware-esxi"],
-      "script": "scripts/photon-vagrant-user_provisioning.sh"
+      "boot_command": [
+        "<esc><wait>",
+        "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/photon-kickstart.json photon.media=cdrom",
+        "<enter>"
+      ],
+      "boot_wait": "10s",
+      "disk_size": "{{ user `disksize` }}",
+      "disk_type_id": "zeroedthick",
+      "format": "ovf",
+      "guest_os_type": "vmware-photon-64",
+      "headless": false,
+      "http_directory": "http",
+      "iso_checksum": "{{ user `iso_checksum_type` }}:{{ user `iso_checksum` }}",
+      "iso_url": "{{ user `iso_file` }}",
+      "name": "vmware-esxi",
+      "remote_datastore": "{{ user `esx_datastore` }}",
+      "remote_host": "{{ user `esx_host` }}",
+      "remote_password": "{{ user `esx_password` }}",
+      "remote_type": "esx5",
+      "remote_username": "{{ user `esx_username` }}",
+      "shutdown_command": "/sbin/shutdown -h now",
+      "skip_compaction": true,
+      "ssh_password": "{{ user `ssh_password` }}",
+      "ssh_port": 22,
+      "ssh_timeout": "60m",
+      "ssh_username": "{{ user `ssh_username` }}",
+      "type": "vmware-iso",
+      "version": "16",
+      "vm_name": "{{ user `vmname` }}",
+      "vmx_data": {
+        "annotation": "Version: {{ user `version` }}",
+        "ethernet0.addressType": "generated",
+        "ethernet0.networkName": "{{ user `esx_portgroup` }}",
+        "ethernet0.present": "TRUE",
+        "ethernet0.startConnected": "TRUE",
+        "ethernet0.virtualDev": "{{ user `eth_type` }}",
+        "ethernet0.wakeOnPcktRcv": "FALSE",
+        "ethernet1.addressType": "generated",
+        "ethernet1.networkName": "{{ user `monitor_portgroup` }}",
+        "ethernet1.present": "TRUE",
+        "ethernet1.startConnected": "TRUE",
+        "ethernet1.virtualDev": "{{ user `eth_type` }}",
+        "ethernet1.wakeOnPcktRcv": "FALSE",
+        "memsize": "{{ user `ramsize` }}",
+        "numvcpus": "{{ user `numvcpus` }}"
+      },
+      "vnc_disable_password": true
     },
     {
-      "type": "shell",
-      "only": ["vmware-desktop", "vmware-esxi"],
-      "script": "scripts/photon-sharedfolders_prep.sh"
-    },
-    {
-      "type": "shell",
-      "only": ["virtualbox"],
-      "script": "scripts/photon-vagrant-vbox_additions.sh"
-    },
-    {
-      "type": "file",
-      "only": ["virtualbox"],
-      "source": "scripts/photon-virtualbox-load-module.conf",
-      "destination": "/etc/modules-load.d/virtualbox.conf"
-    },
-    {
-      "type": "shell",
-      "inline": ["sed -i '/linux/ s/$/ net.ifnames=0/' /boot/grub2/grub.cfg"]
-    },
-    {
-      "type": "shell",
-      "inline": ["echo 'GRUB_CMDLINE_LINUX=\"net.ifnames=0\"' >> /etc/default/grub"]
-    },
-    {
-      "type": "shell",
-      "script": "scripts/photon-security_check.sh"
-    },
-    {
-      "type": "shell",
-      "inline": ["sed -i 's/OS/Linux/' /etc/photon-release"]
+      "boot_command": [
+        "<esc><wait>",
+        "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/photon-kickstart.json",
+        "<enter>"
+      ],
+      "boot_wait": "5s",
+      "disk_size": "{{ user `disksize` }}",
+      "guest_os_type": "Linux_64",
+      "hard_drive_interface": "scsi",
+      "headless": false,
+      "http_directory": "scripts",
+      "iso_checksum": "{{user `iso_checksum_type`}}:{{user `iso_checksum`}}",
+      "iso_url": "{{user `iso_file`}}",
+      "name": "virtualbox",
+      "shutdown_command": "shutdown -h now",
+      "ssh_password": "{{user `ssh_password`}}",
+      "ssh_timeout": "60m",
+      "ssh_username": "{{user `ssh_username`}}",
+      "type": "virtualbox-iso",
+      "vboxmanage": [
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--memory",
+          "{{ user `ramsize` }}"
+        ],
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--cpus",
+          "{{ user `numvcpus` }}"
+        ]
+      ],
+      "vm_name": "{{ user `vmname` }}"
     }
   ],
   "post-processors": [
     {
-      "type": "vagrant",
-      "only": ["vmware-desktop", "virtualbox", "vmware-esxi"],
       "compression_level": 9,
-      "vagrantfile_template": "scripts/photon-vagrantfile.rb",
-      "output": "photon-{{user `product_version`}}-{{.BuildName}}.box"
+      "only": [
+        "vmware-desktop",
+        "virtualbox",
+        "vmware-esxi"
+      ],
+      "output": "photon-{{user `product_version`}}-{{.BuildName}}.box",
+      "type": "vagrant",
+      "vagrantfile_template": "packer/scripts/vagrantfile.rb"
+    }
+  ],
+  "provisioners": [
+    {
+      "script": "packer/scripts/install-packages.sh",
+      "type": "shell"
+    },
+    {
+      "only": [
+        "vmware-desktop",
+        "virtualbox",
+        "vmware-esxi"
+      ],
+      "script": "packer/scripts/vagrant-user_provisioning.sh",
+      "type": "shell"
+    },
+    {
+      "only": [
+        "vmware-desktop",
+        "vmware-esxi"
+      ],
+      "script": "packer/scripts/sharedfolders_prep.sh",
+      "type": "shell"
+    },
+    {
+      "only": [
+        "virtualbox"
+      ],
+      "script": "packer/scripts/vagrant-vbox_additions.sh",
+      "type": "shell"
+    },
+    {
+      "destination": "/etc/modules-load.d/virtualbox.conf",
+      "only": [
+        "virtualbox"
+      ],
+      "source": "packer/scripts/virtualbox-load-module.conf",
+      "type": "file"
+    },
+    {
+      "inline": [
+        "sed -i '/linux/ s/$/ net.ifnames=0/' /boot/grub2/grub.cfg"
+      ],
+      "type": "shell"
+    },
+    {
+      "inline": [
+        "echo 'GRUB_CMDLINE_LINUX=\"net.ifnames=0\"' >> /etc/default/grub"
+      ],
+      "type": "shell"
+    },
+    {
+      "script": "packer/scripts/security_check.sh",
+      "type": "shell"
+    },
+    {
+      "inline": [
+        "sed -i 's/OS/Linux/' /etc/photon-release"
+      ],
+      "type": "shell"
     }
   ]
 }
