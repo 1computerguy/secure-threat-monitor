@@ -13,7 +13,7 @@
       "monitor_portgroup": "Monitor",
       "numvcpus": "4",
       "product_version": "3.0",
-      "ramsize": "16",
+      "ramsize": "16384",
       "ssh_password": "1qaz2wsx!QAZ@WSX",
       "ssh_username": "root",
       "vmname": "Secure Traffic Monitor"
