@@ -7,15 +7,15 @@
       "esx_username": "root",
       "eth_type": "vmxnet3",
       "host_portgroup": "Management",
-      "iso_checksum": "C2883A42E402A2330D9C39B4D1E071CF9B3B5898",
+      "iso_checksum": "b3cac3a62659261af7ede1cbb81d5af544a26d19",
       "iso_checksum_type": "sha1",
-      "iso_file": "./packer/ISO/photon-minimal-3.0.iso",
+      "iso_file": "./packer/ISO/photon-3.0.iso",
       "numvcpus": "4",
       "product_version": "3.0GA",
       "ramsize": "16384",
-      "ssh_password": "1qaz2wsx!QAZ@WSX",
+      "ssh_password": "SomeSecurePassword",
       "ssh_username": "root",
-      "vmname": "Secure Traffic Monitor",
+      "vmname": "Secure-Traffic-Monitor",
       "script_dir": "packer/scripts"
   },
   "builders": [
@@ -132,20 +132,21 @@
   ],
   "post-processors": [
     {
-      "compression_level": 9,
+      "type": "shell-local",
       "only": [
         "vmware-desktop",
-        "virtualbox",
         "vmware-esxi"
       ],
-      "output": "photon-{{user `product_version`}}-{{.BuildName}}.box",
-      "type": "vagrant",
-      "vagrantfile_template": "{{ user `script_dir` }}/vagrantfile.rb"
+      "inline": [ "packer/scripts/ova-export.bat" ]
     }
   ],
   "provisioners": [
     {
       "script": "{{ user `script_dir` }}/install-packages.sh",
+      "type": "shell"
+    },
+    {
+      "script": "{{ user `script_dir` }}/build-environment.sh",
       "type": "shell"
     },
     {
@@ -200,6 +201,10 @@
       "inline": [
         "sed -i 's/OS/Linux/' /etc/photon-release"
       ],
+      "type": "shell"
+    },
+    {
+      "script": "{{ user `script_dir` }}/remove-packages.sh",
       "type": "shell"
     }
   ]
