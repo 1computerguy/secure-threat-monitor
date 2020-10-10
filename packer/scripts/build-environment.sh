@@ -22,6 +22,12 @@ docker pull sflow/prometheus
 docker pull sflow/host-sflow
 docker pull sflow/sflowtool
 
+# Pull Prometheus time-based DB container
+docker pull prom/prometheus
+
+# Pull Grafana container
+docker pull grafana/grafana
+
 # download secure-threat-monitor git repository to build containers
 git clone https://github.com/1computerguy/secure-threat-monitor.git
 
