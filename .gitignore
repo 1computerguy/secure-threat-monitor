@@ -10,8 +10,12 @@ crash.log
 # ISO files for testing
 *.iso
 
+# Compressed files
 *.7z
 *.zip
 
 # VM build files
 /output*
+
+# OVA files
+*.ova
