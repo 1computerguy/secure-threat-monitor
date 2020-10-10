@@ -4,11 +4,11 @@
     "password":
         {
             "crypted": false,
-            "text": "1qaz2wsx!QAZ@WSX"
+            "text": "SomeSecurePassword"
         },
     "disk": "/dev/sda",
     "packagelist_file": "packages_minimal.json",
-    "additional_packages": ["git"],
+    "additional_packages": ["git", "sudo"],
     "postinstall": [
                     "#!/bin/sh",
                     "sed -i 's/PermitRootLogin no/PermitRootLogin yes/g' /etc/ssh/sshd_config",
