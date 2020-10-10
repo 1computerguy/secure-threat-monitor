@@ -1,7 +1,7 @@
 [submodule "docker/mercury"]
 	path = docker/mercury
-	url = https://github.com/cisco/mercury.git
+	url = https://github.com/1computerguy/mercury.git
 [submodule "netcap"]
 	path = docker/netcap
-	url = https://github.com/dreadl0ck/netcap.git
+	url = https://github.com/1computerguy/netcap.git
 	branch = v0.5
