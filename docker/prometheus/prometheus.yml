@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 15s
+
+scrape_configs:
+  - job_name: Prometheus
+    static_configs:
+      - targets: ["prometheus:9090"]
+  - job_name: netcap
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
+        - netcap:7777
+  - job_name: 'node-stats' 
+    static_configs: 
+      - targets: ['nodestats:9100']
+  - job_name: 'cadvisor' 
+    static_configs:
+      - targets: ['cadvisor:8080']
