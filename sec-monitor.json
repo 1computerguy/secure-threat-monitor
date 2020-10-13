@@ -48,7 +48,9 @@
       "vmx_data_post": {
         "displayname": "{{ user `vmname` }}",
         "usb.present": "false"
-      }
+      },
+      "format": "ova"
+
     },
     {
       "boot_command": [
@@ -59,7 +61,7 @@
       "boot_wait": "10s",
       "disk_size": "{{ user `disksize` }}",
       "disk_type_id": "thin",
-      "format": "ovf",
+      "format": "ova",
       "guest_os_type": "vmwarePhoton64Guest",
       "headless": false,
       "http_directory": "{{ user `script_dir` }}",
@@ -134,8 +136,7 @@
     {
       "type": "shell-local",
       "only": [
-        "vmware-desktop",
-        "vmware-esxi"
+        "virtualbox"
       ],
       "inline": [ "packer/scripts/ova-export.bat" ]
     }
