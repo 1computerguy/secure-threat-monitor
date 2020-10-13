@@ -14,11 +14,6 @@ tdnf --assumeyes remove \
                  perl-DBI \
                  perl-YAML \
                  perl-CGI \
-                 git \
-                 autogen \
-                 automake \
-                 autoconf \
-                 libtool \
-                 gcc
+                 git 
 
 tdnf clean all

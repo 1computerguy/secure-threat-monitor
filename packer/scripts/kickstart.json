@@ -10,12 +10,7 @@
     "packagelist_file": "packages_minimal.json",
     "additional_packages": [
         "git",
-        "sudo",
-        "autogen",
-        "automake",
-        "autoconf",
-        "libtool",
-        "gcc"
+        "sudo"
     ],
     "postinstall": [
                     "#!/bin/sh",

@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# download and install nDPI
-git clone https://github.com/ntop/nDPI.git
-
 # download secure-threat-monitor git repository to build containers
 git clone https://github.com/1computerguy/secure-threat-monitor.git
 
@@ -10,3 +7,4 @@ git clone https://github.com/1computerguy/secure-threat-monitor.git
 pushd secure-threat-monitor
 git submodule update --init
 
+popd
