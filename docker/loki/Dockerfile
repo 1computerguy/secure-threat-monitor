@@ -1,0 +1,1 @@
+FROM grafana/loki:1.6.1
