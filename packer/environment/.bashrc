@@ -103,3 +103,4 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
 fi
 
 sudo systemctl restart docker
+docker ps -a
