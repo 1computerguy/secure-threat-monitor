@@ -1,12 +1,7 @@
 {
   "variables": {
     "disksize": "204800",
-    "esx_datastore": "datastore0",
-    "esx_host": "192.168.1.101",
-    "esx_password": "1qaz2wsx!QAZ@WSX",
-    "esx_username": "root",
     "eth_type": "vmxnet3",
-    "host_portgroup": "Management",
     "iso_checksum": "b3cac3a62659261af7ede1cbb81d5af544a26d19",
     "iso_checksum_type": "sha1",
     "iso_file": "./packer/ISO/photon-3.0.iso",
@@ -16,7 +11,17 @@
     "ssh_password": "SomeSecurePassword",
     "ssh_username": "root",
     "vmname": "Secure-Traffic-Monitor",
-    "script_dir": "packer/scripts"
+    "script_dir": "packer/scripts",
+    "env_dir": "packer/environment",
+    "esx_host": "192.168.1.100",
+    "vcenter_host": "vcenter.home.lab",
+    "vcenter_username": "administrator@vsphere.local",
+    "vcenter_password": "1qaz2wsx!QAZ@WSX",
+    "vcenter_datacenter":"Datacenter",
+    "vcenter_datastore": "local-store",
+    "vcenter_vmfolder": "Template",
+    "vcenter_portgroup": "VM Network",
+    "localip": "192.168.1.213"
   },
   "sensitive-variables": [
     "esx_password",
@@ -24,85 +29,75 @@
   ],
   "builders": [
     {
+      "type": "vmware-iso",
+      "name": "vmware-desktop",
+      "vm_name": "{{ user `vmname` }}",
+      "version": 16,
+      "guest_os_type": "other3xlinux-64",
+      "cpus": "{{ user `numvcpus` }}",
+      "memory": "{{ user `ramsize` }}",
+      "disk_size": "{{ user `disksize` }}",
+      "disk_type_id": 0,
+      "network_adapter_type": "{{ user `eth_type` }}",
+      "iso_checksum": "{{user `iso_checksum_type`}}:{{user `iso_checksum`}}",
+      "iso_url": "{{user `iso_file`}}",
       "boot_command": [
         "<esc><wait>",
         "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/kickstart.json photon.media=cdrom",
         "<enter>"
       ],
       "boot_wait": "5s",
-      "disk_size": "{{ user `disksize` }}",
-      "disk_type_id": 0,
-      "guest_os_type": "other3xlinux-64",
       "headless": false,
       "http_directory": "{{ user `script_dir` }}",
-      "iso_checksum": "{{user `iso_checksum_type`}}:{{user `iso_checksum`}}",
-      "iso_url": "{{user `iso_file`}}",
-      "name": "vmware-desktop",
-      "shutdown_command": "shutdown -h now",
       "ssh_password": "{{user `ssh_password`}}",
-      "ssh_timeout": "60m",
       "ssh_username": "{{user `ssh_username`}}",
-      "type": "vmware-iso",
-      "version": 16,
-      "vm_name": "{{ user `vmname` }}",
-      "vmdk_name": "sec-monitor-disk1",
-      "cpus": "{{ user `numvcpus` }}",
-      "memory": "{{ user `ramsize` }}",
-      "network_adapter_type": "{{ user `eth_type` }}",
-      "vmx_data_post": {
-        "displayname": "{{ user `vmname` }}",
-        "usb.present": "false",
-        "ethernet0.connectionType": "nat",
-        "ethernet0.addressType": "generated",
-        "ethernet0.virtualDev": "vmxnet3",
-        "ethernet1.connectionType": "hostonly",
-        "ethernet1.addressType": "generated",
-        "ethernet1.virtualDev": "vmxnet3"
-      },
+      "ssh_timeout": "60m",
+      "shutdown_command": "shutdown -h now",
       "format": "ova"
     },
     {
+      "type": "vsphere-iso",
+      "name": "vmware-esxi",
+      "vm_name": "{{ user `vmname` }}",
+      "vm_version": 15,
+      "guest_os_type": "other3xLinux64Guest",
+      "CPUs": "{{ user `numvcpus` }}",
+      "RAM": "{{ user `ramsize` }}",
+      "storage": [
+        {
+          "disk_size": "{{ user `disksize` }}",
+          "disk_thin_provisioned": true
+        }
+      ],
+      "network_adapters": [
+        {
+          "network": "{{ user `vcenter_portgroup` }}",
+          "network_card": "vmxnet3"
+        }
+      ],
+      "iso_checksum": "{{ user `iso_checksum_type` }}:{{ user `iso_checksum` }}",
+      "iso_url": "{{ user `iso_file` }}",
       "boot_command": [
         "<esc><wait>",
-        "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/kickstart.json photon.media=cdrom",
+        "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ user `localip` }}:{{ .HTTPPort }}/kickstart.json photon.media=cdrom",
         "<enter>"
       ],
       "boot_wait": "10s",
-      "disk_size": "{{ user `disksize` }}",
-      "disk_type_id": "thin",
-      "format": "ova",
-      "guest_os_type": "vmwarePhoton64Guest",
-      "headless": false,
       "http_directory": "{{ user `script_dir` }}",
-      "iso_checksum": "{{ user `iso_checksum_type` }}:{{ user `iso_checksum` }}",
-      "iso_url": "{{ user `iso_file` }}",
-      "name": "vmware-esxi",
-      "remote_datastore": "{{ user `esx_datastore` }}",
-      "remote_host": "{{ user `esx_host` }}",
-      "remote_password": "{{ user `esx_password` }}",
-      "remote_type": "esx5",
-      "remote_username": "{{ user `esx_username` }}",
-      "shutdown_command": "/sbin/shutdown -h now",
-      "skip_compaction": true,
-      "ssh_password": "{{ user `ssh_password` }}",
-      "ssh_port": 22,
-      "ssh_timeout": "60m",
       "ssh_username": "{{ user `ssh_username` }}",
-      "type": "vmware-iso",
-      "version": "16",
-      "vm_name": "{{ user `vmname` }}",
-      "vmx_data": {
-        "annotation": "Version: {{ user `version` }}",
-        "ethernet0.addressType": "generated",
-        "ethernet0.networkName": "{{ user `esx_portgroup` }}",
-        "ethernet0.present": "TRUE",
-        "ethernet0.startConnected": "TRUE",
-        "ethernet0.virtualDev": "{{ user `eth_type` }}",
-        "ethernet0.wakeOnPcktRcv": "FALSE",
-        "memsize": "{{ user `ramsize` }}",
-        "numvcpus": "{{ user `numvcpus` }}"
-      },
-      "vnc_disable_password": true
+      "ssh_password": "{{ user `ssh_password` }}",
+      "ssh_timeout": "60m",
+      "shutdown_command": "/sbin/shutdown -h now",
+      "vcenter_server": "{{ user `vcenter_host` }}",
+      "host": "{{ user `esx_host` }}",
+      "username": "{{ user `vcenter_username` }}",
+      "password": "{{ user `vcenter_password` }}",
+      "insecure_connection": "true",
+      "datacenter": "{{ user `vcenter_datacenter` }}",
+      "datastore": "{{ user `vcenter_datastore` }}",
+      "cluster": "{{ user `vcenter_cluster` }}",
+      "folder": "{{ user `vcenter_vmfolder` }}",
+      "convert_to_template": true
     },
     {
       "boot_command": [
@@ -163,12 +158,12 @@
     {
       "type": "file",
       "source": "{{ user `env_dir` }}/setup.service",
-      "destination": "/"
+      "destination": "/lib/systemd/system/setup.service"
     },
     {
       "type": "file",
-      "source": "{{ user `env_dir` }}/.bashrc",
-      "destination": "/home/monadmin/.bashrc"
+      "source": "{{ user `env_dir` }}/setup.sh",
+      "destination": "/root/setup.sh"
     },
     {
       "script": "{{ user `script_dir` }}/install-packages.sh",
