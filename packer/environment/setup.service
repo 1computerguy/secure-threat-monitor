@@ -1,0 +1,12 @@
+[Unit]
+Description=Initial Setup Script
+After=vmtoolsd.target
+Wants=vmtoolsd.target
+ConditionPathExists=!/root/.ran_customization
+
+[Service]
+ExecStart=/root/setup.sh
+Type=oneshot
+
+[Install]
+WantedBy=multi-user.target
