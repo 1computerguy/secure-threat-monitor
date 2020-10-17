@@ -6,7 +6,7 @@ import argparse
 import get_malicious
 
 # Your API key
-API_KEY = '0f6b86cdae8180b3a9b26e32dc3224acc7f00e887d8d542de837599df8c7bc6f'
+API_KEY = ''
 OTX_SERVER = 'https://otx.alienvault.com/'
 otx = OTXv2(API_KEY, server=OTX_SERVER)
 
