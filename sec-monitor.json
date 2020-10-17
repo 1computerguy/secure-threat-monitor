@@ -152,15 +152,30 @@
   ],
   "provisioners": [
     {
+      "script": "{{ user `script_dir` }}/user_provisioning.sh",
+      "type": "shell"
+    },
+    {
+      "type": "file",
+      "source": "{{ user `env_dir` }}/.bashrc",
+      "destination": "/home/monadmin/.bashrc"
+    },
+    {
+      "type": "file",
+      "source": "{{ user `env_dir` }}/setup.service",
+      "destination": "/"
+    },
+    {
+      "type": "file",
+      "source": "{{ user `env_dir` }}/.bashrc",
+      "destination": "/home/monadmin/.bashrc"
+    },
+    {
       "script": "{{ user `script_dir` }}/install-packages.sh",
       "type": "shell"
     },
     {
       "script": "{{ user `script_dir` }}/build-environment.sh",
-      "type": "shell"
-    },
-    {
-      "script": "{{ user `script_dir` }}/user_provisioning.sh",
       "type": "shell"
     },
     {
@@ -179,12 +194,12 @@
       "type": "shell"
     },
     {
-      "destination": "/etc/modules-load.d/virtualbox.conf",
+      "type": "file",
       "only": [
         "virtualbox"
       ],
       "source": "{{ user `script_dir` }}/virtualbox-load-module.conf",
-      "type": "file"
+      "destination": "/etc/modules-load.d/virtualbox.conf"
     },
     {
       "inline": [
