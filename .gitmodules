@@ -1,3 +1,0 @@
-[submodule "docker/mercury"]
-	path = docker/mercury
-	url = https://github.com/1computerguy/mercury.git
