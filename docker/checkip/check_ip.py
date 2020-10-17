@@ -5,8 +5,10 @@ from OTXv2 import OTXv2
 import argparse
 import get_malicious
 
-# Your API key
-API_KEY = ''
+with open('api') as infile:
+    for line in infile:
+        API_KEY = line
+
 OTX_SERVER = 'https://otx.alienvault.com/'
 otx = OTXv2(API_KEY, server=OTX_SERVER)
 
