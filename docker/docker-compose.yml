@@ -13,7 +13,7 @@ services:
       org.label-schema.group: "net-capture"
   mercury:
     build:
-      context: ./mercury
+      context: ./docker/mercury
       dockerfile: Dockerfile
       labels:
         - "com.example.description=Labeled SSL/TLS Signatures"
@@ -37,6 +37,18 @@ services:
       - NET=eth1
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      org.label-schema.group: "net-capture"
+  check-ip:
+    build:
+      context: ./docker/checkip
+      dockerfile: Dockerfile
+    image: checkip:latest
+    restart: "no"
+    networks:
+      - monitor-net
+    volumes:
+      - /var/log/checkip:/var/log/checkip
     labels:
       org.label-schema.group: "net-capture"
   sflow-prometheus:
@@ -126,7 +138,7 @@ services:
     command: -config.file=/etc/promtail/config.yml
   grafana:
     build:
-      context: ./grafana
+      context: ./docker/grafana
       dockerfile: Dockerfile
       args:
         - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel,simpod-json-datasource,

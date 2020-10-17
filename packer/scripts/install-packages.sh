@@ -7,4 +7,3 @@ chmod +x /usr/local/bin/docker-compose
 
 systemctl enable docker
 systemctl start docker
-# tdnf --assumeyes install git sudo

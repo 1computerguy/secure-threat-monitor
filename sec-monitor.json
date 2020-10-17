@@ -1,23 +1,27 @@
 {
   "variables": {
-      "disksize": "204800",
-      "esx_datastore": "datastore0",
-      "esx_host": "192.168.1.101",
-      "esx_password": "1qaz2wsx!QAZ@WSX",
-      "esx_username": "root",
-      "eth_type": "vmxnet3",
-      "host_portgroup": "Management",
-      "iso_checksum": "b3cac3a62659261af7ede1cbb81d5af544a26d19",
-      "iso_checksum_type": "sha1",
-      "iso_file": "./packer/ISO/photon-3.0.iso",
-      "numvcpus": "4",
-      "product_version": "3.0GA",
-      "ramsize": "16384",
-      "ssh_password": "SomeSecurePassword",
-      "ssh_username": "root",
-      "vmname": "Secure-Traffic-Monitor",
-      "script_dir": "packer/scripts"
+    "disksize": "204800",
+    "esx_datastore": "datastore0",
+    "esx_host": "192.168.1.101",
+    "esx_password": "1qaz2wsx!QAZ@WSX",
+    "esx_username": "root",
+    "eth_type": "vmxnet3",
+    "host_portgroup": "Management",
+    "iso_checksum": "b3cac3a62659261af7ede1cbb81d5af544a26d19",
+    "iso_checksum_type": "sha1",
+    "iso_file": "./packer/ISO/photon-3.0.iso",
+    "numvcpus": "4",
+    "product_version": "3.0GA",
+    "ramsize": "16384",
+    "ssh_password": "SomeSecurePassword",
+    "ssh_username": "root",
+    "vmname": "Secure-Traffic-Monitor",
+    "script_dir": "packer/scripts"
   },
+  "sensitive-variables": [
+    "esx_password",
+    "ssh_password"
+  ],
   "builders": [
     {
       "boot_command": [
@@ -56,7 +60,6 @@
         "ethernet1.virtualDev": "vmxnet3"
       },
       "format": "ova"
-
     },
     {
       "boot_command": [
@@ -157,12 +160,7 @@
       "type": "shell"
     },
     {
-      "only": [
-        "vmware-desktop",
-        "virtualbox",
-        "vmware-esxi"
-      ],
-      "script": "{{ user `script_dir` }}/vagrant-user_provisioning.sh",
+      "script": "{{ user `script_dir` }}/user_provisioning.sh",
       "type": "shell"
     },
     {
