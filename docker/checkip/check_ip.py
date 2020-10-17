@@ -4,11 +4,9 @@
 from OTXv2 import OTXv2
 import argparse
 import get_malicious
-import hashlib
-
 
 # Your API key
-API_KEY = ''
+API_KEY = '0f6b86cdae8180b3a9b26e32dc3224acc7f00e887d8d542de837599df8c7bc6f'
 OTX_SERVER = 'https://otx.alienvault.com/'
 otx = OTXv2(API_KEY, server=OTX_SERVER)
 
@@ -18,13 +16,8 @@ parser.add_argument('-host',
                     help='Hostname eg; www.alienvault.com', required=False)
 parser.add_argument(
     '-url', help='URL eg; http://www.alienvault.com', required=False)
-parser.add_argument(
-    '-hash', help='Hash of a file eg; 7b42b35832855ab4ff37ae9b8fa9e571', required=False)
-parser.add_argument(
-    '-file', help='Path to a file, eg; malware.exe', required=False)
 
 args = vars(parser.parse_args())
-
 
 if args['ip']:
     alerts = get_malicious.ip(otx, args['ip'])
@@ -44,24 +37,6 @@ if args['host']:
 
 if args['url']:
     alerts = get_malicious.url(otx, args['url'])
-    if len(alerts) > 0:
-        print('Identified as potentially malicious')
-        print(str(alerts))
-    else:
-        print('Unknown or not identified as malicious')
-
-if args['hash']:
-    alerts =  get_malicious.file(otx, args['hash'])
-    if len(alerts) > 0:
-        print('Identified as potentially malicious')
-        print(str(alerts))
-    else:
-        print('Unknown or not identified as malicious')
-
-
-if args['file']:
-    hash = hashlib.md5(open(args['file'], 'rb').read()).hexdigest()
-    alerts =  get_malicious.file(otx, hash)
     if len(alerts) > 0:
         print('Identified as potentially malicious')
         print(str(alerts))
