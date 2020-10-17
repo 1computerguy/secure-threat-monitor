@@ -15,6 +15,7 @@ services:
     build:
       context: ./docker/mercury
       dockerfile: Dockerfile
+      network: bridge
       labels:
         - "com.example.description=Labeled SSL/TLS Signatures"
     image: mercury:latest
