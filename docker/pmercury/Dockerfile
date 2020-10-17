@@ -38,5 +38,5 @@ RUN export PYTHON3_VERSION=`python3 -c 'import sys; version=sys.version_info[:3]
 
 RUN ldconfig
 
-ENTRYPOINT ["/usr/local/bin/pmercury", "-d", "/resources/fingerprint-db.json.gz"]
-CMD ["-c", "eth0"]
+ENTRYPOINT ["/usr/local/bin/pmercury"]
+CMD ["-h"]
