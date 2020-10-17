@@ -47,7 +47,13 @@
       "network_adapter_type": "{{ user `eth_type` }}",
       "vmx_data_post": {
         "displayname": "{{ user `vmname` }}",
-        "usb.present": "false"
+        "usb.present": "false",
+        "ethernet0.connectionType": "nat",
+        "ethernet0.addressType": "generated",
+        "ethernet0.virtualDev": "vmxnet3",
+        "ethernet1.connectionType": "hostonly",
+        "ethernet1.addressType": "generated",
+        "ethernet1.virtualDev": "vmxnet3"
       },
       "format": "ova"
 
