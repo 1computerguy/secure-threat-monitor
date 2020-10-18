@@ -53,15 +53,3 @@ table_manager:
     provisioned_write_throughput: 0
   retention_deletes_enabled: false
   retention_period: 0
-
-#ruler:
-#  storage:
-#    type: local
-#    local:
-#      directory: /loki/rules
-#  rule_path: /loki/tmprules
-#  alertmanager_url: http://localhost
-#  ring:
-#    kvstore:
-#      store: inmemory
-#  enable_api: true
