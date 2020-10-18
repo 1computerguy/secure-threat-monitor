@@ -10,8 +10,7 @@ scrape_configs:
     metrics_path: /metrics
     scheme: http
     static_configs:
-      - targets:
-        - netcap:7777
+      - targets: ["netcap:7777"]
   - job_name: 'node-stats' 
     static_configs: 
       - targets: ['nodestats:9100']
