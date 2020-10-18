@@ -4,8 +4,10 @@ pushd /home/monadmin
 
 echo "> Download required docker and resource directories..."
 # download secure-threat-monitor git repository to build containers
-svn export https://github.com/cisco/mercury/trunk/resources
 svn export https://github.com/1computerguy/secure-threat-monitor/trunk/docker
+pushd docker/pmercury
+svn export https://github.com/cisco/mercury/trunk/resources
+popd
 
 echo "> Set permissions for monadmin resources..."
 chown -R monadmin:monadmin {docker,resources}

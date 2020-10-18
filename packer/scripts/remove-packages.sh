@@ -4,24 +4,6 @@
 ## cleanup everything we can to make the OVA as small as possible
 ##
 
-# Remove packages and clear tdnf cache
-echo '> Removing unnecessary packages...'
-tdnf --assumeyes remove \
-                 openldap \
-                 cyrus-sasl \
-                 serf \
-                 subversion \
-                 apr \
-                 utf8proc \
-                 apr-util \
-                 subversion-perl \
-                 python2-libs \
-                 python2 perl \
-                 perl-DBI \
-                 perl-YAML \
-                 perl-CGI \
-                 git 
-
 echo '> Clearing tdnf cache...'
 tdnf clean all
 

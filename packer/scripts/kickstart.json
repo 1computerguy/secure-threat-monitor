@@ -9,7 +9,7 @@
     "disk": "/dev/sda",
     "packagelist_file": "packages_minimal.json",
     "additional_packages": [
-        "git",
+        "svn",
         "sudo"
     ],
     "postinstall": [
