@@ -12,7 +12,7 @@ services:
     volumes:
       - type: bind
         source: /capture/netcap
-        target: 
+        target: /var/log/netcap
   pmercury:
     build:
       context: ./docker/pmercury
@@ -24,7 +24,9 @@ services:
     restart: "no"
     network_mode: host
     volumes:
-      - /var/log/pmercury:/output
+      - type: bind
+        source: /var/log/pmercury
+        target: /output
     labels:
       org.label-schema.group: "net-capture"
     command: ["-c", "eth1", "-d", "/resources/fingerprint-db.json.gz", "-f", "/output/pmercury.json", "-a", "-w", "-x", "-e"]
@@ -37,7 +39,9 @@ services:
       - COLLECTOR=sflow-prometheus
       - NET=eth1
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock:ro
     labels:
       org.label-schema.group: "net-capture"
   check-ip:
@@ -49,7 +53,9 @@ services:
     networks:
       - monitor-net
     volumes:
-      - /var/log/checkip:/output
+      - type: bind
+        source: /var/log/checkip
+        target: /output
     labels:
       org.label-schema.group: "net-capture"
   sflow-prometheus:
@@ -68,8 +74,12 @@ services:
     container_name: prometheus
     restart: unless-stopped
     volumes:
-      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
+      - type: bind
+        source: ./docker/prometheus/prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+      - type: volume
+        source: prometheus-data
+        target: /prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     ports:
@@ -94,10 +104,18 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
+      - type: bind
+        source: /
+        target: /rootfs:ro
+      - type: bind
+        source: /var/run
+        target: /var/run:rw
+      - type: bind
+        source: /sys
+        target: /sys:ro
+      - type: bind
+        source: /var/lib/docker/
+        target: /var/lib/docker:ro
     restart: unless-stopped
     networks:
       - monitor-net
@@ -114,8 +132,12 @@ services:
     labels:
       org.label-schema.group: "monitor"
     volumes:
-      - loki-data:/loki
-      - ./docker/loki/loki-config.yml:/etc/loki/local-config.yml
+      - type: volume
+        source: loki-data
+        target: /loki
+      - type: bind
+        source: ./docker/loki/loki-config.yml
+        target: /etc/loki/local-config.yml
     command: -config.file=/etc/loki/local-config.yaml
   promtail:
     image: grafana/promtail:1.6.1
@@ -126,9 +148,15 @@ services:
     labels:
       org.label-schema.group: "monitor"
     volumes:
-      - /var/log/pmercury:/var/log/pmercury
-      - /var/log/checkip:/var/log/checkip
-      - ./docker/promtail/promtail-config.yml:/etc/promtail/config.yml
+      - type: bind
+        source: /var/log/pmercury
+        target: /var/log/pmercury
+      - type: bind
+        source: /var/log/checkip
+        target: /var/log/checkip
+      - type: bind
+        source: ./docker/promtail/promtail-config.yml
+        target: /etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
   grafana:
     build:
@@ -142,10 +170,18 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - grafana-data:/var/lib/grafana
-      - ./docker/grafana/grafana.ini:/etc/grafana/grafana.ini
-      - ./docker/grafana/resources:/etc/grafana/provisioning
-      - ./docker/grafana/resources/dashboards:/etc/grafana/provisioning/dashboards
+      - type: volume
+        source: grafana-data
+        target: /var/lib/grafana
+      - type: bind
+        source: ./docker/grafana/grafana.ini
+        target: /etc/grafana/grafana.ini
+      - type: bind
+        source: ./docker/grafana/resources
+        target: /etc/grafana/provisioning
+      - type: bind
+        source: ./docker/grafana/resources/dashboards
+        target: /etc/grafana/provisioning/dashboards
     environment:
       - GF_SECURITY_ADMIN_USER=${ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD}
