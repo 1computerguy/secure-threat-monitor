@@ -24,8 +24,10 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends libpcap-dev \
             python3-minimal python3-setuptools
 
-RUN mkdir /resources
-COPY ./resources /resources
+RUN mkdir /output
+RUN mkdir -p /pmercury/resources
+COPY ./config.yaml /pmercury/config.yaml
+COPY ./resources /pmercury/resources
 
 COPY --from=initial /output/usr/local /usr/local
 

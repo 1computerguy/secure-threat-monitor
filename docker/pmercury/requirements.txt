@@ -2,6 +2,7 @@ wheel
 cryptography
 hpack
 pyasn
+numpy
 pypcap
 pyyaml
 pmercury
