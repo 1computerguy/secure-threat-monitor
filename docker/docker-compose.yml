@@ -166,7 +166,7 @@ services:
       context: ./docker/grafana
       dockerfile: Dockerfile
       args:
-        - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel,simpod-json-datasource
+        - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel,simpod-json-datasource,natel-plotly-panel,ae3e-plotly-panel,petrslavotinek-carpetplot-panel,digiapulssi-breadcrumb-panel
     image: grafana:latest
     container_name: grafana
     restart: unless-stopped
