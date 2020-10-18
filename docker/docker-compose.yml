@@ -80,8 +80,11 @@ services:
       - type: volume
         source: prometheus-data
         target: /prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+    command: >-
+      --config.file=/etc/prometheus/prometheus.yml
+      --storage.tsdb.path=/prometheus
+      --web.console.libraries=/usr/share/prometheus/console_libraries
+      --web.console.templates=/usr/share/prometheus/consoles
     ports:
       - 9090:9090
     networks:
@@ -183,8 +186,8 @@ services:
         source: ./docker/grafana/resources/dashboards
         target: /etc/grafana/provisioning/dashboards
     environment:
-      - GF_SECURITY_ADMIN_USER=${ADMIN_USER}
-      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=test
       - GF_USERS_ALLOW_SIGN_UP=false
     networks:
       - monitor-net
