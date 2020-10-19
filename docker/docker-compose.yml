@@ -26,10 +26,10 @@ services:
     volumes:
       - type: bind
         source: /var/log/pmercury
-        target: /output
+        target: /endpoint_/output
     labels:
       org.label-schema.group: "net-capture"
-    command: ["-c", "eth1", "-d", "/resources/fingerprint-db.json.gz", "-f", "/output/pmercury.json", "-a", "-w", "-x", "-e"]
+    command: ["-c", "eth1", "-f", "/output/pmercury.json"]
   sflow-collector:
     image: sflow/host-sflow
     container_name: host-sflow
