@@ -44,17 +44,53 @@ scrape_configs:
           job: checkip
           __path__: /var/log/checkip/*.log
 
-  - job_name: pmercury
+  - job_name: mercury_tls
     pipeline_stages:
       - json:
           expressions:
-            
+            src_ip: src_ip
+            dst_ip: dst_ip
+            src_port: src_port
+            dst_port: dst_port
+            timestamp: event_start
+            fingerprints:
+            tls:
+      - json:
+          expressions:
+            tls:
+          source: fingerprints
+      - json:
+          expressions:
+            server_name:
+          source: tls
       - labels:
-          job: pmercury
-
+          job: mercury_tls
     static_configs:
       - targets:
           - localhost
         labels:
           job: pmercury
-          __path__: /var/log/pmercury/*.log
+          __path__: /var/log/pmercury/tls.log*
+
+  - job_name: mercury_tls_server
+    pipeline_stages:      
+      - json:
+          expressions:
+            src_ip: src_ip
+            dst_ip: dst_ip
+            src_port: src_port
+            dst_port: dst_port
+            timestamp: event_start
+            fingerprints:
+      - json:
+          expressions:
+            tls_server:
+          source: fingerprints
+      - labels:
+          job: mercury_tls_server
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: pmercury
+          __path__: /var/log/pmercury/tls_server.log*
