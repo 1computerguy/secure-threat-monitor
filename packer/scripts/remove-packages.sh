@@ -4,8 +4,8 @@
 ## cleanup everything we can to make the OVA as small as possible
 ##
 
-echo '> Clearing tdnf cache...'
-tdnf clean all
+#echo '> Clearing tdnf cache...'
+#tdnf clean all
 
 # Cleanup log files
 echo '> Removing Log files...'

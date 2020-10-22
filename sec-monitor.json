@@ -1,16 +1,18 @@
 {
   "variables": {
-    "disksize": "204800",
-    "eth_type": "vmxnet3",
-    "iso_checksum": "b3cac3a62659261af7ede1cbb81d5af544a26d19",
-    "iso_checksum_type": "sha1",
-    "iso_file": "./packer/ISO/photon-3.0.iso",
-    "numvcpus": "4",
-    "product_version": "3.0GA",
+    "iso_checksum": "sha1:1C82F74495C4D9257C973FD031BC5EBDE3D5B9A7",
+    "iso_file": "./packer/ISO/ubuntu-20.04.1-live-server-amd64.iso",
+    "iso_url":  "https://releases.ubuntu.com/20.04/ubuntu-20.04.1-live-server-amd64.iso",
+    "numvcpus": "8",
+    "product_version": "0.1",
     "ramsize": "16384",
+    "disksize1": "40960",
+    "disksize2": "61440",
+    "disksize3": "204800",
+    "eth_type": "vmxnet3",
     "ssh_password": "SomeSecurePassword",
-    "ssh_username": "root",
-    "vmname": "Secure-Traffic-Monitor",
+    "ssh_username": "secadmin",
+    "vmname": "Encrypted-Traffic-Monitor",
     "script_dir": "packer/scripts",
     "env_dir": "packer/environment",
     "esx_host": "192.168.1.100",
@@ -20,39 +22,45 @@
     "vcenter_datacenter":"Datacenter",
     "vcenter_datastore": "local-store",
     "vcenter_vmfolder": "Template",
-    "vcenter_portgroup": "VM Network",
-    "localip": "192.168.1.213"
+    "mgmt_portgroup": "VM Network",
+    "monitor_portgroup": "Internet"
   },
-  "sensitive-variables": [
-    "esx_password",
-    "ssh_password"
-  ],
   "builders": [
     {
       "type": "vmware-iso",
       "name": "vmware-desktop",
       "vm_name": "{{ user `vmname` }}",
       "version": 16,
-      "guest_os_type": "other3xlinux-64",
+      "guest_os_type": "ubuntu-64",
       "cpus": "{{ user `numvcpus` }}",
       "memory": "{{ user `ramsize` }}",
-      "disk_size": "{{ user `disksize` }}",
+      "disk_size": "{{ user `disksize1` }}",
+      "disk_additional_size": [
+        "{{ user `disksize2` }}",
+        "{{ user `disksize3` }}"
+      ],
       "disk_type_id": 0,
+      "disk_adapter_type": "scsi",
       "network_adapter_type": "{{ user `eth_type` }}",
-      "iso_checksum": "{{user `iso_checksum_type`}}:{{user `iso_checksum`}}",
-      "iso_url": "{{user `iso_file`}}",
+      "vmx_data": {
+          "disk.EnableUUID": "TRUE"
+      },
+      "iso_checksum": "{{ user `iso_checksum` }}",
+      "iso_urls": ["{{ user `iso_file` }}","{{ user `iso_url` }}"],
       "boot_command": [
-        "<esc><wait>",
-        "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/kickstart.json photon.media=cdrom",
-        "<enter>"
+        "<enter><enter><f6><esc><wait> ",
+        "autoinstall ds=nocloud-net;seedfrom=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
+        "<enter><wait>"
       ],
       "boot_wait": "5s",
       "headless": false,
-      "http_directory": "{{ user `script_dir` }}",
+      "http_directory": "{{ user `env_dir` }}",
       "ssh_password": "{{user `ssh_password`}}",
       "ssh_username": "{{user `ssh_username`}}",
-      "ssh_timeout": "60m",
-      "shutdown_command": "shutdown -h now",
+      "ssh_timeout": "25m",
+      "ssh_pty": true,
+      "ssh_handshake_attempts": "60",
+      "shutdown_command": "shutdown -P now",
       "format": "ova"
     },
     {
@@ -60,30 +68,42 @@
       "name": "vmware-esxi",
       "vm_name": "{{ user `vmname` }}",
       "vm_version": 15,
-      "guest_os_type": "other3xLinux64Guest",
+      "guest_os_type": "ubuntu64Guest",
       "CPUs": "{{ user `numvcpus` }}",
       "RAM": "{{ user `ramsize` }}",
       "storage": [
         {
-          "disk_size": "{{ user `disksize` }}",
+          "disk_size": "{{ user `disksize1` }}",
+          "disk_thin_provisioned": true
+        },
+        {
+          "disk_size": "{{ user `disksize2` }}",
+          "disk_thin_provisioned": true
+        },
+        {
+          "disk_size": "{{ user `disksize3` }}",
           "disk_thin_provisioned": true
         }
       ],
       "network_adapters": [
         {
-          "network": "{{ user `vcenter_portgroup` }}",
+          "network": "{{ user `mgmt_portgroup` }}",
+          "network_card": "vmxnet3"
+        },
+        {
+          "network": "{{ user `monitor_portgroup` }}",
           "network_card": "vmxnet3"
         }
       ],
-      "iso_checksum": "{{ user `iso_checksum_type` }}:{{ user `iso_checksum` }}",
+      "iso_checksum": "{{ user `iso_checksum` }}",
       "iso_url": "{{ user `iso_file` }}",
       "boot_command": [
-        "<esc><wait>",
-        "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ user `localip` }}:{{ .HTTPPort }}/kickstart.json photon.media=cdrom",
-        "<enter>"
+        "<enter><enter><f6><esc><wait> ",
+        "autoinstall ds=nocloud-net;seedfrom=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
+        "<enter><wait>"
       ],
       "boot_wait": "10s",
-      "http_directory": "{{ user `script_dir` }}",
+      "http_directory": "{{ user `env_dir` }}",
       "ssh_username": "{{ user `ssh_username` }}",
       "ssh_password": "{{ user `ssh_password` }}",
       "ssh_timeout": "60m",
@@ -96,44 +116,43 @@
       "datacenter": "{{ user `vcenter_datacenter` }}",
       "datastore": "{{ user `vcenter_datastore` }}",
       "cluster": "{{ user `vcenter_cluster` }}",
-      "folder": "{{ user `vcenter_vmfolder` }}",
-      "convert_to_template": true
+      "folder": "{{ user `vcenter_vmfolder` }}"
     },
     {
-      "boot_command": [
-        "<esc><wait>",
-        "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/kickstart.json photon.media=cdrom",
-        "<enter>"
-      ],
-      "boot_wait": "5s",
-      "disk_size": "{{ user `disksize` }}",
-      "guest_os_type": "Linux_64",
-      "hard_drive_interface": "scsi",
-      "headless": false,
-      "http_directory": "{{ user `script_dir` }}",
-      "iso_checksum": "{{user `iso_checksum_type`}}:{{user `iso_checksum`}}",
-      "iso_url": "{{user `iso_file`}}",
-      "name": "virtualbox",
-      "shutdown_command": "shutdown -h now",
-      "ssh_password": "{{user `ssh_password`}}",
-      "ssh_timeout": "60m",
-      "ssh_username": "{{user `ssh_username`}}",
       "type": "virtualbox-iso",
+      "name": "virtualbox",
+      "vm_name": "{{ user `vmname` }}",
+      "guest_os_type": "Ubuntu_64",
       "vboxmanage": [
-        [
-          "modifyvm",
-          "{{.Name}}",
-          "--memory",
-          "{{ user `ramsize` }}"
-        ],
         [
           "modifyvm",
           "{{.Name}}",
           "--cpus",
           "{{ user `numvcpus` }}"
+        ],
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--memory",
+          "{{ user `ramsize` }}"
         ]
       ],
-      "vm_name": "{{ user `vmname` }}"
+      "disk_size": "{{ user `disksize` }}",
+      "hard_drive_interface": "scsi",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "iso_url": "{{user `iso_file`}}",
+      "boot_command": [
+        "<enter><enter><f6><esc><wait> ",
+        "autoinstall ds=nocloud-net;seedfrom=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
+        "<enter><wait>"
+      ],
+      "boot_wait": "5s",
+      "http_directory": "{{ user `script_dir` }}",
+      "headless": false,
+      "ssh_username": "{{user `ssh_username`}}",
+      "ssh_password": "{{user `ssh_password`}}",
+      "ssh_timeout": "60m",
+      "shutdown_command": "shutdown -h now"
     }
   ],
   "post-processors": [
@@ -152,18 +171,13 @@
     },
     {
       "type": "file",
-      "source": "{{ user `env_dir` }}/.bashrc",
-      "destination": "/home/monadmin/.bashrc"
-    },
-    {
-      "type": "file",
       "source": "{{ user `env_dir` }}/setup.service",
       "destination": "/lib/systemd/system/setup.service"
     },
     {
       "type": "file",
       "source": "{{ user `env_dir` }}/setup.sh",
-      "destination": "/root/setup.sh"
+      "destination": "/usr/local/bin/setup.sh"
     },
     {
       "script": "{{ user `script_dir` }}/install-packages.sh",

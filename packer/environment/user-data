@@ -1,0 +1,88 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US
+  keyboard:
+    layout: en
+    variant: us
+  network:
+    network:
+      version: 2
+      ethernets:
+        ens160:
+          dhcp4: true
+  storage:
+    config:
+      - id: disk0
+        type: disk
+        ptable: msdos
+        path: /dev/sda
+        name: root_disk
+        wipe: superblock
+        grub_device: true
+      - id: root
+        type: partition
+        number: 1
+        size: 100%
+        device: disk0
+        flag: boot
+      - id: root-format
+        type: format
+        fstype: ext4
+        volume: root
+      - id: root-mount
+        type: mount
+        path: /
+        device: root-format
+      - id: disk1
+        type: disk
+        ptable: gpt
+        path: /dev/sdb
+        name: log_disk
+      - id: logs
+        type: partition
+        number: 1
+        size: 100%
+        device: disk1
+      - id: log-format
+        type: format
+        fstype: ext4
+        volume: logs
+      - id: log-mount
+        type: mount
+        path: /var/log
+        device: log-format
+      - id: disk2
+        type: disk
+        ptable: gpt
+        path: /dev/sdc
+        name: ts_disk
+      - id: ts-data
+        type: partition
+        number: 1
+        size: 100%
+        device: disk2
+      - id: ts-format
+        type: format
+        fstype: ext4
+        volume: ts-data
+      - id: ts-mount
+        type: mount
+        path: /storage
+        device: ts-format
+  identity:
+    hostname: sec-threat-mon
+    username: secadmin
+    password: $6$saltsalt$s5Ll8WFD55cw1O.91a9DpsswIrZ1TOTGx4feSASLY1UedHjfIfSRQgvNL1mmhrCurIP6e4EiMZK0Eh1SYBVFa1
+  ssh:
+    install-server: yes
+  update: no
+  packages:
+    - git
+    - docker.io
+    - docker-compose
+  user-data:
+    disable_root: false
+  late-commands:
+    - echo 'secadmin ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/secadmin
+    - 'sed -i "s/dhcp4: true/&\n      dhcp-identifier: mac/" /target/etc/netplan/00-installer-config.yaml'

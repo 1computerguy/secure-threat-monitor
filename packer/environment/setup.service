@@ -2,10 +2,10 @@
 Description=Initial Setup Script
 After=vmtoolsd.target
 Wants=vmtoolsd.target
-ConditionPathExists=!/root/.ran_customization
+ConditionPathExists=!/secadmin/.ran_customization
 
 [Service]
-ExecStart=/root/setup.sh
+ExecStart=/usr/local/bin/setup.sh
 Type=oneshot
 
 [Install]

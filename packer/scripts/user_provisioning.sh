@@ -1,34 +1,34 @@
 #!/bin/sh
 
-PASSWORD="SomeSecurePassword"
+#PASSWORD="SomeSecurePassword"
 
-HOME_DIR="/home/monadmin"
+#HOME_DIR="/home/secadmin"
 
-echo '> Creating monadmin group and user accounts...'
-# Add monadmin group
-groupadd monadmin
+#echo '> Creating secadmin group and user accounts...'
+# Add secadmin group
+#groupadd secadmin
 
-# Set up a monadmin user and add the insecure key for User to login
-useradd -G monadmin -m monadmin
+# Set up a secadmin user and add the insecure key for User to login
+#useradd -G secadmin -m secadmin
 
 # Avoid password expiration (https://github.com/vmware/photon-packer-templates/issues/2)
-chage -I -1 -m 0 -M 99999 -E -1 monadmin
-chage -I -1 -m 0 -M 99999 -E -1 root
+#chage -I -1 -m 0 -M 99999 -E -1 secadmin
+#chage -I -1 -m 0 -M 99999 -E -1 root
 
-echo '> Adding monadmin to sudoers...'
-# Configure a sudoers for the monadmin user
-echo "monadmin ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/monadmin
+#echo '> Adding secadmin to sudoers...'
+# Configure a sudoers for the secadmin user
+#echo "secadmin ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/secadmin
 
-echo '> Setting monadmin password...'
-# Set monadmin password
-echo -e "$PASSWORD\n$PASSWORD" | passwd monadmin
+#echo '> Setting secadmin password...'
+# Set secadmin password
+#echo -e "$PASSWORD\n$PASSWORD" | passwd secadmin
 
-echo '> Adding docker user and adding monadmin to docker group...'
+echo '> Adding docker user and adding secadmin to docker group...'
 # Add Docker group
 groupadd docker
 # Add Photon user to Docker group
-usermod -a -G docker monadmin
+usermod -a -G docker secadmin
 
-echo '> Setting global path environment variable for users...'
+#echo '> Setting global path environment variable for secadmin...'
 # Set global path
-echo "PATH=/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" >> /etc/environment
+#echo "PATH=/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" >> /etc/environment

@@ -62,5 +62,5 @@ __CUSTOMIZE_PHOTON__
     echo "scanadmin:${SCANADMIN_PASSWORD}" | /usr/sbin/chpasswd
 
     # Ensure we don't run customization again
-    touch /root/.ran_customization
+    touch /secadmin/.ran_customization
 fi
