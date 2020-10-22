@@ -27,4 +27,4 @@ __pycache__/
 
 *.vscode
 
-api
+*.mmdb
