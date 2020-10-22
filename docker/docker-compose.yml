@@ -161,6 +161,35 @@ services:
         source: ./docker/promtail/promtail-config.yml
         target: /etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
+  vmagent:
+    container_name: vmagent
+    image: victoriametrics/vmagent
+    depends_on:
+      - "victoriametrics"
+    ports:
+      - 8429:8429
+    volumes:
+      - vmagentdata:/vmagentdata
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--promscrape.config=/etc/prometheus/prometheus.yml'
+      - '--remoteWrite.url=http://victoriametrics:8428/api/v1/write'
+    networks:
+      - monitor-net
+    restart: unless-stopped
+  victoriametrics:
+    container_name: victoriametrics
+    image: victoriametrics/victoria-metrics
+    ports:
+      - 8428:8428
+    volumes:
+      - vmdata:/storage
+    command:
+      - '--storageDataPath=/storage'
+      - '--httpListenAddr=:8428'
+    networks:
+      - monitor-net
+    restart: unless-stopped
   grafana:
     build:
       context: ./docker/grafana
