@@ -7,29 +7,35 @@ services:
     network_mode: host
     expose:
       - 7777
-    labels:
-      org.label-schema.group: "net-capture"
     volumes:
-      - type: bind
-        source: /capture/netcap
-        target: /var/log/netcap
+      - type: volume
+        source: netcap-data
+        target: /capture/netcap
   pmercury:
     build:
       context: ./docker/pmercury
       dockerfile: Dockerfile
-      labels:
-        - "com.example.description=Labeled SSL/TLS Signatures"
     image: pmercury
     container_name: pmercury
     restart: "no"
     network_mode: host
+    command: ["-c", "eth1", "-f", "/output/pmercury.json"]
     volumes:
       - type: bind
-        source: /var/log/pmercury
+        source: pmercury-data
         target: /endpoint_/output
-    labels:
-      org.label-schema.group: "net-capture"
-    command: ["-c", "eth1", "-f", "/output/pmercury.json"]
+  check-ip:
+    build:
+      context: ./docker/checkip
+      dockerfile: Dockerfile
+    image: checkip:latest
+    restart: "no"
+    networks:
+      - monitor-net
+    volumes:
+      - type: bind
+        source: checkip-data
+        target: /output
   sflow-collector:
     image: sflow/host-sflow
     container_name: host-sflow
@@ -42,22 +48,6 @@ services:
       - type: bind
         source: /var/run/docker.sock
         target: /var/run/docker.sock:ro
-    labels:
-      org.label-schema.group: "net-capture"
-  check-ip:
-    build:
-      context: ./docker/checkip
-      dockerfile: Dockerfile
-    image: checkip:latest
-    restart: "no"
-    networks:
-      - monitor-net
-    volumes:
-      - type: bind
-        source: /var/log/checkip
-        target: /output
-    labels:
-      org.label-schema.group: "net-capture"
   sflow-prometheus:
     image: sflow/prometheus
     container_name: sflow-prometheus
@@ -67,8 +57,6 @@ services:
     expose:
       - 6343/udp
       - 8008
-    labels:
-      org.label-schema.group: "monitor"
   prometheus:
     image: prom/prometheus
     container_name: prometheus
@@ -89,8 +77,6 @@ services:
       - 9090:9090
     networks:
       - monitor-net
-    labels:
-      org.label-schema.group: "monitor"
   nodestats:
     image: prom/node-exporter
     container_name: nodestats
@@ -99,8 +85,6 @@ services:
     restart: unless-stopped
     networks:
       - monitor-net
-    labels:
-      org.label-schema.group: "host-capture"
   cadvisor:
     image: google/cadvisor
     container_name: cadvisor
@@ -122,8 +106,6 @@ services:
     restart: unless-stopped
     networks:
       - monitor-net
-    labels:
-      org.label-schema.group: "host-capture"
   loki:
     image: grafana/loki:1.6.1
     container_name: loki
@@ -132,8 +114,6 @@ services:
     restart: unless-stopped
     networks:
       - monitor-net
-    labels:
-      org.label-schema.group: "monitor"
     volumes:
       - type: volume
         source: loki-data
@@ -148,14 +128,12 @@ services:
     restart: unless-stopped
     networks:
       - monitor-net
-    labels:
-      org.label-schema.group: "monitor"
     volumes:
-      - type: bind
-        source: /var/log/pmercury
+      - type: volume
+        source: pmercury-data
         target: /var/log/pmercury
-      - type: bind
-        source: /var/log/checkip
+      - type: volume
+        source: checkip-data
         target: /var/log/checkip
       - type: bind
         source: ./docker/promtail/promtail-config.yml
@@ -169,8 +147,12 @@ services:
     ports:
       - 8429:8429
     volumes:
-      - vmagentdata:/vmagentdata
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - type: volume
+        source: vmagent-data
+        target: /vmagentdata
+      - type: bind
+        source: ./docker/prometheus/prometheus.yml
+        target: /etc/prometheus/prometheus.yml
     command:
       - '--promscrape.config=/etc/prometheus/prometheus.yml'
       - '--remoteWrite.url=http://victoriametrics:8428/api/v1/write'
@@ -183,7 +165,9 @@ services:
     ports:
       - 8428:8428
     volumes:
-      - vmdata:/storage
+      - type: volume
+        source: vm-data
+        target: /storage
     command:
       - '--storageDataPath=/storage'
       - '--httpListenAddr=:8428'
@@ -220,15 +204,46 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
     networks:
       - monitor-net
-    labels:
-      org.label-schema.group: "monitor"
 
 volumes:
   grafana-data:
+  vmagent-data:
   prometheus-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/log/prometheus
+      o: bind
+  checkip-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/log/checkip
+      o: bind
   netcap-data:
-  mercury-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/log/netcap
+      o: bind
+  pmercury-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/log/pmercury
+      o: bind
   loki-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /storage/loki
+      o: bind
+  vm-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /storage/vmdata
+      o: bind
 
 networks:
   monitor-net:
