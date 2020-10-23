@@ -9,7 +9,7 @@ client:
   url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  - job_name: 
+  - job_name: netcap-tls-client
     pipeline_stages:
       - json:
           expressions:
@@ -19,32 +19,17 @@ scrape_configs:
             dst_ip: dst_ip
             ip_status: ip_status
       - labels:
-          job: checkip
+          job: tls-client
       - regex:
           expression: "^.* ip_status=(?P<ip_status>.?) .*$"
-      - metrics:
-          suspect_ip:
-            type: Counter
-            description: "Suspect IP"
-            source: ip_status
-            config:
-              value: Suspect
-              action: inc
-          not_suspect_ip:
-            type: Counter
-            description: "Good IP"
-            source: ip_status
-            config:
-              value: Good
-              action: inc
     static_configs:
       - targets:
           - localhost
         labels:
-          job: checkip
-          __path__: /var/log/checkip/*.log
+          job: tls-client
+          __path__: /var/log/netcap/tlsclient.log*
 
-  - job_name: mercury_tls
+  - job_name: netcap-tls-server
     pipeline_stages:
       - json:
           expressions:
@@ -64,15 +49,15 @@ scrape_configs:
             server_name:
           source: tls
       - labels:
-          job: mercury_tls
+          job: tls-server
     static_configs:
       - targets:
           - localhost
         labels:
-          job: pmercury
-          __path__: /var/log/pmercury/tls.log*
+          job: tls-server
+          __path__: /var/log/netcap/tlsserver.log*
 
-  - job_name: mercury_tls_server
+  - job_name: netcap-network-flow
     pipeline_stages:      
       - json:
           expressions:
@@ -87,10 +72,10 @@ scrape_configs:
             tls_server:
           source: fingerprints
       - labels:
-          job: mercury_tls_server
+          job: network-flow
     static_configs:
       - targets:
           - localhost
         labels:
-          job: pmercury
+          job: network-flow
           __path__: /var/log/pmercury/tls_server.log*
