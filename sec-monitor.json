@@ -58,7 +58,8 @@
       "ssh_password": "{{user `ssh_password`}}",
       "ssh_username": "{{user `ssh_username`}}",
       "ssh_timeout": "30m",
-      "ssh_handshake_attempts": "60",
+      "ssh_handshake_attempts": "100",
+      "ssh_pty": true,
       "shutdown_command": "shutdown -P now",
       "format": "ova"
     },
@@ -164,16 +165,6 @@
     }
   ],
   "provisioners": [
-    {
-      "type": "file",
-      "source": "{{ user `env_dir` }}/setup.service",
-      "destination": "/lib/systemd/system/setup.service"
-    },
-    {
-      "type": "file",
-      "source": "{{ user `env_dir` }}/setup.sh",
-      "destination": "/usr/local/bin/setup.sh"
-    },
     {
       "script": "{{ user `script_dir` }}/build-environment.sh",
       "type": "shell"

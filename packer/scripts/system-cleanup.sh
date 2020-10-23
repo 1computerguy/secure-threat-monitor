@@ -18,20 +18,12 @@ sudo deborphan | xargs sudo apt-get -y remove --purge
 #Free up space by clean out the cached packages
 sudo apt-get clean
 
-echo "> Removing old kernels..."
-#Cleaning the old kernels
-sudo dpkg-query -l | grep linux-im*
-
-sudo apt-get purge $(dpkg -l 'linux-*' | sed '/^ii/!d;/'"$(uname -r | sed "s/\(.*\)-\([^0-9]\+\)/\1/")"'/d;s/^[^ ]* [^ ]* \([^ ]*\).*/\1/;/[0-9]/!d' | head -n -1) --assume-yes
-sudo apt-get install linux-headers-`uname -r|cut -d'-' -f3`-`uname -r|cut -d'-' -f4`
-
 # Cleanup log files
 echo '> Removing Log files...'
 #Delete all .gz and rotated file
-find /var/log -type f -regex ".*\.gz$" | sudo xargs rm -Rf
-find /var/log -type f -regex ".*\.[0-9]$" | sudo xargs rm -Rf
+sudo find /var/log -type f -regex ".*\.gz$" | xargs sudo rm -Rf
+sudo find /var/log -type f -regex ".*\.[0-9]$" | xargs sudo rm -Rf
 
-sudo cat /dev/null > /var/log/wtmp 2>/dev/null
 #logrotate -f /etc/logrotate.conf 2>/dev/null
 sudo find /var/log -type f -delete
 sudo rm -rf /var/log/journal/*
@@ -49,7 +41,7 @@ sudo rm -f /EMPTY; sync; sleep 1; sync
 
 unset HISTFILE && history -c && rm -fr /home/secadmin/.bash_history
 
-echo '> Shrinking disk...'
-sudo vmware-toolbox-cmd disk shrink /
+#echo '> Shrinking disk...'
+#sudo vmware-toolbox-cmd disk shrink /
 
 echo '> Done'
