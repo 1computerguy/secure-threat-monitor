@@ -7,10 +7,14 @@ services:
     network_mode: host
     expose:
       - 7777
+    command: ["capture", "-config", "/config/capture.conf"]
     volumes:
       - type: volume
         source: netcap-data
         target: /capture/netcap
+      - type: bind
+        source: ./docker/netcap/config.conf
+        target: /config/capture.conf
   pmercury:
     build:
       context: ./docker/pmercury
@@ -122,7 +126,7 @@ services:
         source: ./docker/loki/loki-config.yml
         target: /etc/loki/local-config.yml
     command: -config.file=/etc/loki/local-config.yaml
-  promtail1:
+  promtail-etc:
     image: grafana/promtail:1.6.1
     container_name: promtail-etc
     restart: unless-stopped
@@ -139,7 +143,7 @@ services:
         source: ./docker/promtail/promtail-etc-config.yml
         target: /etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
-  promtail2:
+  promtail-netcap:
     image: grafana/promtail:1.6.1
     container_name: promtail-netcap
     restart: unless-stopped
