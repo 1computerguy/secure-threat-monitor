@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.7"
 services:
   netcap:
     image: dreadl0ck/netcap:alpine-v0.5.9
@@ -122,9 +122,9 @@ services:
         source: ./docker/loki/loki-config.yml
         target: /etc/loki/local-config.yml
     command: -config.file=/etc/loki/local-config.yaml
-  promtail:
+  promtail1:
     image: grafana/promtail:1.6.1
-    container_name: promtail
+    container_name: promtail-etc
     restart: unless-stopped
     networks:
       - monitor-net
@@ -136,7 +136,21 @@ services:
         source: checkip-data
         target: /var/log/checkip
       - type: bind
-        source: ./docker/promtail/promtail-config.yml
+        source: ./docker/promtail/promtail-etc-config.yml
+        target: /etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+  promtail2:
+    image: grafana/promtail:1.6.1
+    container_name: promtail-netcap
+    restart: unless-stopped
+    networks:
+      - monitor-net
+    volumes:
+      - type: volume
+        source: netcap-data
+        target: /var/log/netcap
+      - type: bind
+        source: ./docker/promtail/promtail-netcap-config.yml
         target: /etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
   vmagent:
