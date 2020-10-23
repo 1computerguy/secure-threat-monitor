@@ -1,0 +1,250 @@
+NetCap TLSClientHello.json
+{
+	"Timestamp":"1603475574280",
+	"Type":22,"Version":769,
+	"MessageLen":387,
+	"HandshakeType":1,
+	"HandshakeLen":383,
+	"HandshakeVersion":771,
+	"Random":"k6d2ar+pR0dk19xMlsUqtVvciFKOOhZC/utxUQVwrg4=",
+	"SessionIDLen":32,
+	"SessionID":"RNLiH2NbD1vqQDuw7NyWok0qwFZN488FKVkMTXUphqY=",
+	"CipherSuiteLen":150,
+	"ExtensionLen":160,
+	"SNI":"facebook.com",
+	"CipherSuites":[4866,4867,4865,49196,49200,163,159,52393,52392,52394,49327,49325,49315,49311,49245,49249,49239,49235,49195,49199,162,158,49326,49324,49314,49310,49244,49248,49238,49234,49188,49192,107,106,49267,49271,196,195,49187,49191,103,64,49266,49270,190,189,49162,49172,57,56,136,135,49161,49171,51,50,69,68,157,49313,49309,49233,156,49312,49308,49232,61,192,60,186,53,132,47,65,255],
+	"CompressMethods":[0],
+	"SignatureAlgs":[1027,1283,1539,2055,2056,2057,2058,2059,2052,2053,2054,1025,1281,1537,771,769,770,1026,1282,1538],
+	"SupportedGroups":[29,23,30,25,24],
+	"SupportedPoints":[0,1,2],
+	"Ja3":"fb4726d465c5f28b84cd6d14cedd13a7",
+	"SrcIP":"192.168.222.146",
+	"DstIP":"157.240.19.35",
+	"SrcMAC":"00:0c:29:a3:69:4e",
+	"DstMAC":"00:50:56:fb:b5:13",
+	"SrcPort":40670,
+	"DstPort":443,
+	"Extensions":[0,11,10,35,22,23,13,43,45,51]
+}
+
+
+
+NetCap TLSServerHello.json
+{
+	"Timestamp":"1603475574357",
+	"Version":771,
+	"Random":"wqBgaocEBJ5aVBLyXHqrC142glWxkqE5rRqixhjSFMs=",
+	"SessionID":"RNLiH2NbD1vqQDuw7NyWok0qwFZN488FKVkMTXUphqY=",
+	"CipherSuite":4867,
+	"SupportedVersion":772,
+	"Extensions":[43,51],
+	"SrcIP":"157.240.19.35",
+	"DstIP":"192.168.222.146",
+	"SrcMAC":"00:50:56:fb:b5:13",
+	"DstMAC":"00:0c:29:a3:69:4e",
+	"SrcPort":443,
+	"DstPort":40670,
+	"Ja3s":"475c9302dc42b2751db9edcac3b74891"
+}
+
+
+NetCap IPv4.json
+{
+	"Timestamp":"1603475423995",
+	"Version":4,
+	"IHL":5,
+	"Length":72,
+	"Id":20511,
+	"TTL":128,
+	"Protocol":17,
+	"Checksum":44083,
+	"SrcIP":"192.168.222.1",
+	"DstIP":"192.168.222.255",
+	"PayloadSize":52,
+	"SrcPort":57621,
+	"DstPort":57621
+}
+
+
+NetCap IPProfile.json
+{
+	"Addr":"157.240.19.35",
+	"NumPackets":"153",
+	"TimestampFirst":"1603475574184",
+	"TimestampLast":"1603475575410",
+	"Ja3": {
+		"475c9302dc42b2751db9edcac3b74891":"",
+		"fb4726d465c5f28b84cd6d14cedd13a7":""
+	},
+	"Protocols": {
+
+	},
+	"Bytes":"88092",
+	"SNIs": {
+		"facebook.com":"1",
+		"www.facebook.com":"1"
+	},
+	"SrcPorts": [
+		{
+			"PortNumber":443,
+			"Packets":"76",
+			"Bytes":"82445",
+			"Protocol":"TCP"
+		}
+	],
+	"DstPorts": [
+		{
+			"PortNumber":443,
+			"Packets":"77",
+			"Bytes":"5647",
+			"Protocol":"TCP"
+		}
+	],
+	"ContactedPorts": [
+		{
+			"PortNumber":40670,
+			"Packets":"25",
+			"Bytes":"5809",
+			"Protocol":"TCP"
+		},
+		{
+			"PortNumber":40672,
+			"Packets":"128",
+			"Bytes":"82283",
+			"Protocol":"TCP"
+		}
+	]
+}
+
+
+NetCap DeviceProfile.json
+{
+	"MacAddr":"00:50:56:c0:00:08",
+	"DeviceIPs": [
+		"192.168.222.1"
+	],
+	"Contacts": [
+		"192.168.222.255",
+		"192.168.222.146"
+	],
+	"NumPackets":"239",
+	"Timestamp":"1603475423995",
+	"Bytes":"18076"
+}
+
+
+NetCap DNS.json
+{
+	"Timestamp":"1603475574053",
+	"ID":2000,
+	"RD":true,
+	"QDCount":1,
+	"ARCount":1,
+	"Questions": [
+		{
+			"Name":"facebook.com",
+			"Type":1,
+			"Class":1
+		}
+	],
+	"Additionals": [
+		{
+			"Type":41,
+			"Class":512,
+			"Data":"",
+			"IP":"\u003cnil\u003e",
+			"SOA":{
+
+			},
+			"SRV":{
+
+			},
+			"MX":{
+
+			}
+		}
+	],
+	"SrcIP":"192.168.222.146",
+	"DstIP":"192.168.222.2",
+	"SrcPort":58394,
+	"DstPort":53
+}
+
+NetCap Ethernet.json
+{
+	"Timestamp":"1603475643828",
+	"SrcMAC":"00:50:56:c0:00:08",
+	"DstMAC":"00:0c:29:a3:69:4e",
+	"EthernetType":2048,
+	"PayloadSize":46
+}
+
+
+NetCap TCP.json
+{
+	"Timestamp":"1603475566808",
+	"SrcPort":59000,
+	"DstPort":22,
+	"SeqNum":3770705745,
+	"AckNum":1704619553,
+	"DataOffset":5,
+	"PSH":true,
+	"ACK":true,
+	"Window":4105,
+	"Checksum":57211,
+	"PayloadSize":36,
+	"SrcIP":"192.168.222.1",
+	"DstIP":"192.168.222.146"
+}
+
+
+NetCap UDP.json
+{
+	"Timestamp":"1603475432836",
+	"SrcPort":137,
+	"DstPort":137,
+	"Length":58,
+	"Checksum":51128,
+	"PayloadSize":50,
+	"SrcIP":"192.168.222.1",
+	"DstIP":"192.168.222.255"
+}
+
+
+NetCap Connection.json
+{
+	"TimestampFirst":"1603475566808",
+	"LinkProto":"Ethernet",
+	"NetworkProto":"IPv4",
+	"TransportProto":"TCP",
+	"ApplicationProto":"Payload",
+	"SrcMAC":"00:50:56:c0:00:08",
+	"DstMAC":"00:0c:29:a3:69:4e",
+	"SrcIP":"192.168.222.1",
+	"SrcPort":"59000",
+	"DstIP":"192.168.222.146",
+	"DstPort":"22",
+	"TotalSize":30868,
+	"AppPayloadSize":36,
+	"NumPackets":358,
+	"UID":"85ffa461c6a41bacb2010c9b61b17a16",
+	"TimestampLast":"1603475645569",
+	"Duration":"78760291918"
+}
+
+
+NetCap Service.json
+{
+	"Timestamp":"1603475574184",
+	"IP":"157.240.19.35",
+	"Port":443,
+	"Banner":"\u0016\u0003\u0003\u0000z\u0002\u0000\u0000v\u0003\u0003 `j\ufffd\u0004\u0004\ufffdZT\u0012\ufffd\\z\ufffd\u000b^6\ufffdU\ufffd\ufffd\ufffd9\ufffd\u001a\ufffd\ufffd\u0018\ufffd\u0014\ufffd D\ufffd\ufffd\u001fc[\u000f[\ufffd@;\ufffd\ufffdܖ\ufffdM*\ufffdVM\ufffd\ufffd\u0005)Y\u000cMu)\ufffd\ufffd\u0013\u0003\u0000\u0000.\u0000+\u0000\u0002\u0003\u0004\u00003\u0000$\u0000\u001d\u0000 \ufffd'\u0019d\ufffd\ufffdc\ufffdŚ\ufffd\ufffdL\ufffd\ufffdf\ufffd\u001b\ufffdz1\ufffd\ufffd\ufffd\ufffd\u0005\u0014\ufffdv\u0010b\u0014\u0003\u0003\u0000\u0001\u0001\u0017\u0003\u0003\u0003\ufffd\ufffdpa\u0013\ufffd\u001e\ufffd\ufffd\u0003A\u001a)\ufffd5g\ufffd\ufffdu\u000f\u0001{\u001eAM\u000e\ufffd\u0007D%\u0012!mF\ufffd\ufffdka\u0015\ufffd\ufffd\ufffdK6\ufffdJ\u0019-\u001ctH\ufffd\u0004\ufffd\ufffd\u0019\ufffd\u000c\ufffd'\u00003\u0011\u003e\ufffd?\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffdǨ\ufffdV\ufffd\ufffd\ufffd\ufffd[wO\ufffd\ufffd\ufffdo\u0015V\ufffd\u0010\ufffd\ufffdw\ufffdN\ufffd%c\ufffd\ufffd$S\ufffdA\ufffd\ufffddŤ\ufffd\u0000\ufffdO@",
+	"Protocol":"TCP",
+	"Flows": [
+		"192.168.222.146:40670-\u003e157.240.19.35:443"
+	],
+	"BytesServer":3762,
+	"BytesClient":641,
+	"Hostname":"edge-star-mini-shv-01-dfw5.facebook.com."
+}
+
