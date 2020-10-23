@@ -165,14 +165,6 @@
   ],
   "provisioners": [
     {
-      "script": "{{ user `script_dir` }}/install-packages.sh",
-      "type": "shell"
-    },
-    {
-      "script": "{{ user `script_dir` }}/user_provisioning.sh",
-      "type": "shell"
-    },
-    {
       "type": "file",
       "source": "{{ user `env_dir` }}/setup.service",
       "destination": "/lib/systemd/system/setup.service"
@@ -184,14 +176,6 @@
     },
     {
       "script": "{{ user `script_dir` }}/build-environment.sh",
-      "type": "shell"
-    },
-    {
-      "only": [
-        "vmware-desktop",
-        "vmware-esxi"
-      ],
-      "script": "{{ user `script_dir` }}/sharedfolders_prep.sh",
       "type": "shell"
     },
     {
@@ -210,29 +194,7 @@
       "destination": "/etc/modules-load.d/virtualbox.conf"
     },
     {
-      "inline": [
-        "sed -i '/linux/ s/$/ net.ifnames=0/' /boot/grub2/grub.cfg"
-      ],
-      "type": "shell"
-    },
-    {
-      "inline": [
-        "echo 'GRUB_CMDLINE_LINUX=\"net.ifnames=0\"' >> /etc/default/grub"
-      ],
-      "type": "shell"
-    },
-    {
-      "script": "{{ user `script_dir` }}/security_check.sh",
-      "type": "shell"
-    },
-    {
-      "inline": [
-        "sed -i 's/OS/Linux/' /etc/photon-release"
-      ],
-      "type": "shell"
-    },
-    {
-      "script": "{{ user `script_dir` }}/remove-packages.sh",
+      "script": "{{ user `script_dir` }}/system-cleanup.sh",
       "type": "shell"
     }
   ]
