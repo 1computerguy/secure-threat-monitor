@@ -7,7 +7,9 @@ RUN mkdir -p /usr/local/etc/netcap/dbs && \
     wget https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.csv -O /usr/local/etc/netcap/dbs/service-names-port-numbers.csv && \
     wget https://raw.githubusercontent.com/salesforce/hassh/master/python/hasshGen/hassh_fingerprints.json -O /usr/local/etc/netcap/dbs/hasshdb.json
 
-COPY GeoLite2-City.mmdb GeoLite2-Country.mmdb GeoLite2-ASN.mmdb ja_3_3s.json /usr/local/etc/netcap/dbs/
+COPY GeoLite2-City.mmdb GeoLite2-Country.mmdb GeoLite2-ASN.mmdb \
+     ja_3_3s.json ja3UserAgents.json ja3fingerprint.json ja3erDB.json \
+     domain-whitelist.csv /usr/local/etc/netcap/dbs/
 
 ENTRYPOINT ["net"]
 CMD ["--help"]
