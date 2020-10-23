@@ -43,7 +43,15 @@
       "disk_adapter_type": "scsi",
       "network_adapter_type": "{{ user `eth_type` }}",
       "vmx_data": {
-          "disk.EnableUUID": "TRUE"
+        "disk.EnableUUID": "TRUE",
+        "ethernet1.present": "TRUE",
+        "ethernet1.virtualDev": "{{ user `eth_type` }}",
+        "ethernet1.startConnected": "TRUE",
+        "ethernet1.addressType": "generated",
+        "ethernet1.pciSlotNumber": "224",
+        "ethernet1.wakeonpcktrcv": "false",
+        "ethernet1.allowguestconnectioncontrol": "true",
+        "ethernet1.generatedAddressOffset": "10"
       },
       "iso_checksum": "{{ user `iso_checksum` }}",
       "iso_urls": ["{{ user `iso_file` }}","{{ user `iso_url` }}"],
