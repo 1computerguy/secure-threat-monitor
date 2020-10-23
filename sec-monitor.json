@@ -57,8 +57,7 @@
       "http_directory": "{{ user `env_dir` }}",
       "ssh_password": "{{user `ssh_password`}}",
       "ssh_username": "{{user `ssh_username`}}",
-      "ssh_timeout": "25m",
-      "ssh_pty": true,
+      "ssh_timeout": "30m",
       "ssh_handshake_attempts": "60",
       "shutdown_command": "shutdown -P now",
       "format": "ova"
@@ -166,6 +165,10 @@
   ],
   "provisioners": [
     {
+      "script": "{{ user `script_dir` }}/install-packages.sh",
+      "type": "shell"
+    },
+    {
       "script": "{{ user `script_dir` }}/user_provisioning.sh",
       "type": "shell"
     },
@@ -178,10 +181,6 @@
       "type": "file",
       "source": "{{ user `env_dir` }}/setup.sh",
       "destination": "/usr/local/bin/setup.sh"
-    },
-    {
-      "script": "{{ user `script_dir` }}/install-packages.sh",
-      "type": "shell"
     },
     {
       "script": "{{ user `script_dir` }}/build-environment.sh",

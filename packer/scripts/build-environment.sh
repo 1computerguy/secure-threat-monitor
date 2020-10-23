@@ -1,7 +1,5 @@
 #!/bin/bash
 
-sudo apt update && sudo apt upgrade -y
-
 pushd /home/secadmin
 
 echo "> Download required docker and resource directories..."

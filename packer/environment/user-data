@@ -11,6 +11,7 @@ autoinstall:
       ethernets:
         ens160:
           dhcp4: true
+          dhcp-identifier: mac
   storage:
     config:
       - id: disk0
@@ -76,11 +77,7 @@ autoinstall:
     password: $6$saltsalt$s5Ll8WFD55cw1O.91a9DpsswIrZ1TOTGx4feSASLY1UedHjfIfSRQgvNL1mmhrCurIP6e4EiMZK0Eh1SYBVFa1
   ssh:
     install-server: yes
-  update: no
-  packages:
-    - git
-    - docker.io
-    - docker-compose
+    allow-pw: yes
   user-data:
     disable_root: false
   late-commands:
