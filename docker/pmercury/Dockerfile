@@ -26,9 +26,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends libpcap-dev \
 
 RUN mkdir /output
 RUN mkdir -p /pmercury/resources
+
 COPY ./config.yaml /pmercury/config.yaml
 COPY ./resources /pmercury/resources
-
+COPY ./pmercury-split.sh /usr/local/bin/pmercury-split.sh
 COPY --from=initial /output/usr/local /usr/local
 
 # `pip install --user` will place things in `site-packages`, but Ubuntu expects
@@ -38,7 +39,6 @@ RUN export PYTHON3_VERSION=`python3 -c 'import sys; version=sys.version_info[:3]
     echo "import site; site.addsitedir('/usr/local/lib/$PYTHON3_VERSION/site-packages')" \
     > /usr/local/lib/$PYTHON3_VERSION/dist-packages/use_site_packages.pth
 
-RUN ldconfig
+RUN ldconfig && chmod +x /usr/local/bin/pmercury-split.sh
 
-ENTRYPOINT ["/usr/local/bin/pmercury"]
-CMD ["-h"]
+ENTRYPOINT ["/usr/local/bin/pmercury-split.sh"]
