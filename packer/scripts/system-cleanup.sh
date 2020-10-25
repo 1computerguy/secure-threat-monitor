@@ -41,7 +41,7 @@ sudo rm -f /EMPTY; sync; sleep 1; sync
 
 unset HISTFILE && history -c && rm -fr /home/secadmin/.bash_history
 
-#echo '> Shrinking disk...'
-#sudo vmware-toolbox-cmd disk shrink /
+echo '> Shrinking disk...'
+sudo vmware-toolbox-cmd disk shrink /
 
 echo '> Done'
