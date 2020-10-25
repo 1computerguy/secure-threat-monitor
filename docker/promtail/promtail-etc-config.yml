@@ -18,10 +18,9 @@ scrape_configs:
             src_ip: src_ip
             dst_ip: dst_ip
             ip_status: ip_status
+            
       - labels:
           job: checkip
-      - regex:
-          expression: "^.* ip_status=(?P<ip_status>.?) .*$"
       - metrics:
           suspect_ip:
             type: Counter
@@ -42,9 +41,9 @@ scrape_configs:
           - localhost
         labels:
           job: checkip
-          __path__: /var/log/checkip/*.log
+          __path__: /var/log/checkip/checkip.json*
 
-  - job_name: mercury_tls
+  - job_name: pmercury_tls
     pipeline_stages:
       - json:
           expressions:
@@ -57,22 +56,28 @@ scrape_configs:
             tls:
       - json:
           expressions:
-            tls:
+            tls_fp: tls
           source: fingerprints
       - json:
           expressions:
             server_name:
           source: tls
       - labels:
-          job: mercury_tls
+          src_ip:
+          dst_ip:
+          src_port:
+          dst_port:
+          timestamp:
+          tls_fp:
+          server_name:
     static_configs:
       - targets:
           - localhost
         labels:
-          job: pmercury
-          __path__: /var/log/pmercury/tls.log*
+          job: pmercury_tls
+          __path__: /var/log/pmercury/tls_pmercury.json*
 
-  - job_name: mercury_tls_server
+  - job_name: pmercury_tls_server
     pipeline_stages:      
       - json:
           expressions:
@@ -84,13 +89,18 @@ scrape_configs:
             fingerprints:
       - json:
           expressions:
-            tls_server:
+            tls_server_fp: tls_server
           source: fingerprints
       - labels:
-          job: mercury_tls_server
+          src_ip:
+          dst_ip:
+          src_port:
+          dst_port:
+          timestamp:
+          tls_server_fp:
     static_configs:
       - targets:
           - localhost
         labels:
-          job: pmercury
-          __path__: /var/log/pmercury/tls_server.log*
+          job: pmercury_tls_server
+          __path__: /var/log/pmercury/tls_server_pmercury.json*

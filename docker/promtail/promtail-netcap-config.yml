@@ -14,14 +14,10 @@ scrape_configs:
       - json:
           expressions:
             timestamp: time
-            timeadded: added_to_otx
             src_ip: src_ip
             dst_ip: dst_ip
-            ip_status: ip_status
       - labels:
           job: tls-client
-      - regex:
-          expression: "^.* ip_status=(?P<ip_status>.?) .*$"
     static_configs:
       - targets:
           - localhost
