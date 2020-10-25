@@ -52,11 +52,12 @@ services:
       dockerfile: Dockerfile
     image: pmercury
     container_name: pmercury
-    restart: "no"
+    restart: unless-stopped
     network_mode: host
-    command: ["-c", "ens224", "-f", "/output/pmercury.json"]
+    environment:
+      INT: ens192
     volumes:
-      - type: bind
+      - type: volume
         source: pmercury-data
         target: /endpoint_/output
   check-ip:
