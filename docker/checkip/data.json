@@ -1,0 +1,6 @@
+{}
+{"report_db": "urlhaus.abuse.ch", "ip_addr": "4.4.4.4", "latitude": 36.0711, "longitude": -86.7196, "urls": ["4.4.4.4"], "first_reported": "", "last_reported": "", "query_date": "2020-10-27T04:21:08.084685+00:00", "url_status": "likely_benign"}
+{}
+{"report_db": "urlhaus.abuse.ch", "ip_addr": "4.4.4.4", "latitude": 36.0711, "longitude": -86.7196, "urls": ["4.4.4.4"], "first_reported": "", "last_reported": "", "query_date": "2020-10-27T04:23:40.648483+00:00", "url_status": "likely_benign"}
+{"report_db": "otx.alienvault.com", "ip_addr": "4.4.4.4", "latitude": 36.0711, "longitude": -86.7196, "urls": ["iij-test03.com/assets/images/us.png", "www.iverca.org/assets/images/us.png", "www.aigoogle.net/assets/images/us.png", "distancepuja.com/assets/images/us.png", "minhnt.info/assets/images/us.png"], "first_reported": "2013-11-14T23:00:00+00:00", "last_reported": "2020-10-23T18:03:47+00:00", "query_date": "2020-10-27T04:25:30.215079+00:00", "url_status": "potentially_malicious"}
+{"report_db": "urlhaus.abuse.ch", "ip_addr": "4.4.4.4", "latitude": 36.0711, "longitude": -86.7196, "urls": ["4.4.4.4"], "first_reported": "", "last_reported": "", "query_date": "2020-10-27T04:25:30.215079+00:00", "url_status": "likely_benign"}

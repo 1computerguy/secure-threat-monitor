@@ -3,10 +3,10 @@ FROM python:slim
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt
 
-RUN mkdir /check
-COPY check_ip.py get_malicious.py /check/
+RUN mkdir /checkip
+COPY check_ip.py /checkip/
 
-WORKDIR /check
+WORKDIR /checkip
 
-ENTRYPOINT [ "python" "/check/check_ip.py" ]
+ENTRYPOINT [ "python" "/checkip/check_ip.py" ]
 CMD [ "-h" ]

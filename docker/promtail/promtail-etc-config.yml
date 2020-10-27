@@ -13,29 +13,53 @@ scrape_configs:
     pipeline_stages:
       - json:
           expressions:
-            timestamp: time
-            timeadded: added_to_otx
-            src_ip: src_ip
-            dst_ip: dst_ip
+            report_db: report_db
+            ip_addr: ip_addr
+            latitude: latitude
+            longitude: longitude
+            urls: urls
+            first_reported: first_seen
+            last_reported: last_seen
+            timestamp:
+              source: query_date
+              format: RFC3339
             ip_status: ip_status
-            
+
       - labels:
-          job: checkip
+          report_db:
+          ip_addr:
+          latitude:
+          longitude:
+          first_reported:
+          last_reported:
+          timestamp:
+          ip_status:
+
       - metrics:
-          suspect_ip:
-            type: Counter
-            description: "Suspect IP"
+          ip_status:
+            type: Histogram
+            description: "Suspect IPs"
             source: ip_status
             config:
-              value: Suspect
+              value: potentially_malicious
               action: inc
-          not_suspect_ip:
-            type: Counter
-            description: "Good IP"
+      - metrics:
+          ip_status:
+            type: Histogram
+            description: "Good IPs"
             source: ip_status
             config:
-              value: Good
+              value: likely_benign
               action: inc
+      - metrics:
+          ip_status:
+            type: Counter
+            description: "Unknown IPs"
+            source: ip_status
+            config:
+              value: potentially_malicious_but_offline
+              action: inc
+              
     static_configs:
       - targets:
           - localhost
