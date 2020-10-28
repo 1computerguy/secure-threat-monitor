@@ -8,10 +8,18 @@ import json
 from ip2geotools.databases.noncommercial import MaxMindGeoLite2City
 import socket
 import requests
-import re
 import os
 from datetime import datetime, timezone
 from dateutil.parser import parse
+import time
+
+
+__version__ = '0.0.2'
+API_KEY = os.environ.get('API_KEY')
+urlhaus_api = "https://urlhaus-api.abuse.ch/v1/"
+OTX_SERVER = 'https://otx.alienvault.com/'
+otx = OTXv2(API_KEY, server=OTX_SERVER)
+query_timestamp = datetime.now(timezone.utc).isoformat()
 
 # Get a nested key from a dict, without having to do loads of ifs
 def getValue(results, keys):
@@ -31,7 +39,30 @@ def getValue(results, keys):
     else:
         return results
 
-def ip(otx, ip):
+# Tail a log file so we can extract IP and hostname in real-time
+def follow(filename):
+    '''generator function that yields new lines in a file
+    '''
+
+    # In case file doesn't exist, we'll wait till it's created
+    while not os.path.exists(filename):
+        time.sleep(1)
+
+    # seek the end of the file
+    filename.seek(0, os.SEEK_END)
+    
+    # start infinite loop
+    while True:
+        # read last line of file
+        line = filename.readline()
+        # sleep if file hasn't been updated
+        if not line:
+            time.sleep(0.1)
+            continue
+
+        yield line
+
+def ip(ip):
     alerts = {}
     url_set = set()
 
@@ -156,7 +187,7 @@ if __name__ == "__main__":
                         help='IP eg; 4.4.4.4', required=False)
     parser.add_argument('-host', action='store', dest='host',
                         help='Hostname eg; www.alienvault.com', required=False)
-    parser.add_argument('-filename', action='store', dest='filename',
+    parser.add_argument('-outfile', action='store', dest='outfile',
                         help='File to save data to. eg; /checkip/output.json',
                         default="/checkip/output.json", required=False)
     parser.add_argument('-maxmind', action='store', dest='db_path',
@@ -166,9 +197,9 @@ if __name__ == "__main__":
     parser.add_argument('-api', action='store', dest='API_KEY',
                         help='API Key obtained from Alienvault OTX website', required=False)
 
-    options, args = parser.parse_args()
+    options = parser.parse_args()
 
-    if options.error_log not '':
+    if options.error_log:
         error_log = options.error_log
     if os.environ['ERROR_LOG']:
         error_log = os.environ['ERROR_LOG']
