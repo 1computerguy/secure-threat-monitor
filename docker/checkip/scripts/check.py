@@ -61,8 +61,8 @@ def main():
     parser.add_argument('-f', '--file', action='store', dest='infile', help='Log file to follow for IP and Host info', required=False)
     parser.add_argument('-i', '--ip', action='store', dest='ip', help='IP address to check with AlienVault', required=False)
     parser.add_argument('-t', '--host', action='store', dest='host', help='Hostname to check with URLHause.abuse.ch', required=False)
-    parser.add_argument('-o', '--outfile', action='store', dest='outfile', help='File to write output date to.', default="output.json", required=False)
-    parser.add_argument('-d', '--db', action='store', dest='mmdb', help='Location of MaxMind City DB', default="../netcap/resources/GeoLite2-City.mmdb", required=False)
+    parser.add_argument('-o', '--outfile', action='store', dest='outfile', help='File to write output date to.', default="/checkip/output/output.json", required=False)
+    parser.add_argument('-d', '--db', action='store', dest='mmdb', help='Location of MaxMind City DB', default="/checkip/resources/GeoLite2-City.mmdb", required=False)
     parser.add_argument('-a', '--api', action='store', dest='api_key', help='API Key obtained from Alienvault OTX website', required=False)
 
     # Set logging before beginning
@@ -84,18 +84,42 @@ def main():
         logging.error('Please provide your Alienvault OTX API Key as the API_KEY environment variable or use the --api command-line argument.')
         exit(1)
 
+    if os.environ.get('INFILE'):
+        infile = os.environ.get('INFILE')
+    elif options.infile:
+        infile = options.infile
+    else:
+        logging.error('Please provide a file to follow for the IP and hostname lookup info.')
+        exit(1)
+    
+    if os.environ.get('OUTFILE'):
+        outfile = os.environ.get('OUTFILE')
+    elif options.outfile:
+        outfile = options.outfile
+    else:
+        logging.error('Please provide a file to follow for the IP and hostname lookup info.')
+        exit(1)
+
+    if os.environ.get('MAXMIND') and os.path.isfile(os.environ.get('MAXMIND')):
+        mmdb = os.environ.get('MAXMIND')
+    elif options.mmdb and os.path.isfile(options.mmdb):
+        mmdb = options.mmdb
+    else:
+        logging.error('Please provide path to the MaxMind GeoLite2-City.mmdb file...')
+        exit(1)
+
     # Set URLs and instantiate OTX object
     urlhaus_api = "https://urlhaus-api.abuse.ch/v1/"
     OTX_SERVER = 'https://otx.alienvault.com/'
     otx = OTXv2(api_key, server=OTX_SERVER)
 
-    if options.infile:
+    if infile:
         # In case watch file doesn't exist, we'll wait till it's created
-        while not os.path.exists(options.infile):
+        while not os.path.exists(infile):
             time.sleep(1)
 
         # Open file and create initial empty set()
-        file_to_follow = open(options.infile,"r")
+        file_to_follow = open(infile,"r")
         data_to_check = set()
 
         # If there is existing data in the file the use it to prepopulate the
@@ -137,7 +161,11 @@ def main():
                 # If it is, then run check_ip, otherwise, we'll ignore it
                 if new_length > old_length:
                     timestamp = datetime.utcnow().isoformat()
-                    queue.put((otx, ip_and_host.split(':')[0], ip_and_host.split(':')[1], urlhaus_api, options.mmdb, timestamp, options.outfile))
+                    queue.put((otx, ip_and_host.split(':')[0], ip_and_host.split(':')[1], urlhaus_api, mmdb, timestamp, outfile))
+                
+                # To conserve memory over time, we will reset the ip_and_host set when it either reaches 10000 unique
+                # entries, or when it reaches 12am UTC. I may make this user controlled at some point, but for now
+                # it will remain hard coded.
                 if new_length > 10000 or datetime.utcnow().strftime('%H:%M:%S') == '00:00:00':
                     ip_and_host = set()
         queue.join()
@@ -145,10 +173,10 @@ def main():
     # Check if we just passed in the IP or Host option - mainly for testing
     elif options.ip:
         timestamp = datetime.utcnow().isoformat()
-        print(ip(otx, options.ip, options.mmdb, timestamp))
+        print(ip(otx, options.ip, mmdb, timestamp))
     elif options.host:
         timestamp = datetime.utcnow().isoformat()
-        print(hostname(options.host, options.mmdb, urlhaus_api, timestamp))
+        print(hostname(options.host, mmdb, urlhaus_api, timestamp))
 
 if __name__ == '__main__':
     try:
