@@ -29,10 +29,6 @@ sudo chown -R secadmin:secadmin docker
 echo "> Move docker-compose to secadmin home directory..."
 mv /home/secadmin/docker/docker-compose.yml /home/secadmin/docker-compose.yml
 
-echo "> Building containers with docker-compose..."
-sudo docker-compose build --force-rm
-sudo docker-compose pull
-
 # Set up HGFS generic mount point
 echo "> Create hgfs mount directory for shared folders - in case we need them..."
 sudo mkdir -p /mnt/hgfs
