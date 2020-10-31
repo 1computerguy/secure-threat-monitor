@@ -9,10 +9,11 @@ import logging
 from OTXv2 import OTXv2
 from check_ip import ip, hostname
 from taillog import follow
-from datetime import datetime, timezone
+from datetime import datetime
 from dateutil.parser import parse
 from queue import Queue
 from threading import Thread
+from collections import deque
 
 logger = logging.getLogger(__name__)
 
@@ -128,23 +129,25 @@ def main():
                     data = json.loads(clean_data, strict=False)
                     ip_and_host = data['dst_ip'] + ':' + data['tls']['server_name']
                     old_length = len(data_to_check)
-                    data_to_check.add(ip_and_host)
+                    new_length = len(data_to_check.add(ip_and_host))
                 except Exception as e:
                     logging.exception("There was a problem with the JSON Data: {}".format(e))
 
                 # Check to see if data was added to set (meaning it's a new entry)
                 # If it is, then run check_ip, otherwise, we'll ignore it
-                if len(data_to_check) > old_length:
-                    timestamp = datetime.now(timezone.utc).isoformat()
+                if new_length > old_length:
+                    timestamp = datetime.utcnow().isoformat()
                     queue.put((otx, ip_and_host.split(':')[0], ip_and_host.split(':')[1], urlhaus_api, options.mmdb, timestamp, options.outfile))
+                if new_length > 10000 or datetime.utcnow().strftime('%H:%M:%S') == '00:00:00':
+                    ip_and_host = set()
         queue.join()
 
     # Check if we just passed in the IP or Host option - mainly for testing
     elif options.ip:
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.utcnow().isoformat()
         print(ip(otx, options.ip, options.mmdb, timestamp))
     elif options.host:
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.utcnow().isoformat()
         print(hostname(options.host, options.mmdb, urlhaus_api, timestamp))
 
 if __name__ == '__main__':

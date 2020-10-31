@@ -9,7 +9,7 @@ import geoip2.database
 import socket
 import requests
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 from dateutil.parser import parse
 import time
 import logging
@@ -150,7 +150,7 @@ def main():
     
     urlhaus_api = "https://urlhaus-api.abuse.ch/v1/"
 
-    query_timestamp = datetime.now(timezone.utc).isoformat()
+    query_timestamp = datetime.utcnow().isoformat()
     mmdb_path = '../netcap/resources/GeoLite2-City.mmdb'
 
     ip_addr = '4.4.4.4'
