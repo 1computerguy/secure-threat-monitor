@@ -65,13 +65,19 @@ services:
       context: ./docker/checkip
       dockerfile: Dockerfile
     image: checkip:latest
-    restart: "no"
+    restart: "unless-stopped"
     networks:
       - monitor-net
+    environment:
+      API_KEY: <AlienVault OTX API key here>
+      INFILE: /checkip/pmercury/tls_pmercury.json
     volumes:
       - type: volume
         source: checkip-data
         target: /output
+      - type: volume
+        source: pmercuryt-data
+        target: /checkip/pmercury
   sflow-collector:
     image: sflow/host-sflow
     container_name: host-sflow
