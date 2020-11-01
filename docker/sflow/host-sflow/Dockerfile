@@ -1,1 +1,0 @@
-FROM sflow/host-sflow
