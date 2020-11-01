@@ -1,1 +1,1 @@
-FROM grafana/promtail:1.6.1
+FROM grafana/promtail:master-081cc02

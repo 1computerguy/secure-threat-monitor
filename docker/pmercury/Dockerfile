@@ -17,7 +17,15 @@ RUN pip3 install --user --ignore-installed -r /tmp/requirements.txt
 # Copy packages to fresh container
 FROM ubuntu:20.04
 
-LABEL maintainer="Bryan Scarbrough <bryan.scarbrough@gmail.com"
+LABEL maintainer="Bryan Scarbrough <bryan.scarbrough@gmail.com>" \
+    org.label-schema.schema-version="1.0" \
+    org.label-schema.build-date=$BUILD_DATE \
+    org.label-schema.vcs-ref=$VCS_REF \
+    org.label-schema.name="pmercury" \
+    org.label-schema.description="SSL/TLS Fingerprints output in json format and split by protocol type" \
+    org.label-schema.url="https://github.com/1computerguy/secure-threat-monitor" \
+    org.label-schema.vcs-url="https://github.com/1computerguy/secure-threat-monitor" \
+    org.label-schema.docker.cmd="docker run --rm -it pmercury:v1.0"
 
 ARG DEBIAN_FRONTEND=noninteractive
 

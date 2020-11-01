@@ -1,1 +1,1 @@
-FROM grafana/loki:1.6.1
+FROM grafana/loki:2-0-with-ingester-panic-fix-aee7ad3

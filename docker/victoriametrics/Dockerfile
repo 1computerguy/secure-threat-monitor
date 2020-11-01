@@ -1,0 +1,1 @@
+FROM victoriametrics/victoria-metrics:v1.44.0
