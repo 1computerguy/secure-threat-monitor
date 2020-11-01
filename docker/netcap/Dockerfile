@@ -7,7 +7,7 @@ RUN mkdir -p /usr/local/etc/netcap/dbs && \
     wget https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.csv -O /usr/local/etc/netcap/dbs/service-names-port-numbers.csv && \
     wget https://raw.githubusercontent.com/salesforce/hassh/master/python/hasshGen/hassh_fingerprints.json -O /usr/local/etc/netcap/dbs/hasshdb.json
 
-COPY ./resources/* /usr/local/etc/netcap/dbs
+COPY ./resources/* /usr/local/etc/netcap/dbs/
 
 ENTRYPOINT ["net"]
 CMD ["--help"]
