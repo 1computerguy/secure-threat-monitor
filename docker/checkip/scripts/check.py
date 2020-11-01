@@ -142,6 +142,7 @@ def main():
             worker.daemon = True
             worker.start()
 
+        new_length = 0
         for line in follow(file_to_follow):
             # Remove any strange/special characters from string
             clean_data = str(line).strip("'<>() \r\n").replace('\'', '\"')
@@ -153,7 +154,8 @@ def main():
                     data = json.loads(clean_data, strict=False)
                     ip_and_host = data['dst_ip'] + ':' + data['tls']['server_name']
                     old_length = len(data_to_check)
-                    new_length = len(data_to_check.add(ip_and_host))
+                    data_to_check.add(ip_and_host)
+                    new_length = len(data_to_check)
                 except Exception as e:
                     logging.exception("There was a problem with the JSON Data: {}".format(e))
 
@@ -168,6 +170,8 @@ def main():
                 # it will remain hard coded.
                 if new_length > 10000 or datetime.utcnow().strftime('%H:%M:%S') == '00:00:00':
                     ip_and_host = set()
+                    old_length = 0
+                    new_length = 0
         queue.join()
 
     # Check if we just passed in the IP or Host option - mainly for testing
