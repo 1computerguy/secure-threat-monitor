@@ -54,7 +54,10 @@ services:
     cap_add:
       - 'NET_ADMIN'
       - 'NET_RAW'
-    mem_limit: 8M
+    deploy:
+      resources:
+        limits:
+          memory: 8M
     restart: on-failure
     networks:
       - monitor-net
@@ -181,7 +184,7 @@ services:
       - check-ip
       - netcap
       - pmercury
-      - sflow-collector
+      - sflow-agent
       - sflow-prometheus
       - promtail-etc
       - promtail-netcap
