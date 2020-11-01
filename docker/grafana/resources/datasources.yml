@@ -4,23 +4,25 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: http://prometheus:9090
+    url: http://victoriametrics:8428
     isDefault: true
+    id: 1
     orgId: 1
     editable: false
     jsonData:
-      timeInterval: 10s
-  - name: loki
-    access: proxy
+      timeInterval: 15s
+  - name: Loki
     type: loki
+    access: proxy
     url: http://loki:3100
     isDefault: false
     database: ''
     user: ''
     password: ''
     basicAuth: false
-    id: 1
-    orgId: 1
+    id: 2
+    orgId: 2
     readOnly: false
     jsonData:
+      timeInterval: 15s
       keepCookies: []

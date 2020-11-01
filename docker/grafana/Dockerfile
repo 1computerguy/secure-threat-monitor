@@ -6,11 +6,11 @@ LABEL maintainer="Bryan Scarbrough <bryan.scarbrough@gmail.com>" \
     org.label-schema.schema-version="1.0" \
     org.label-schema.build-date=$BUILD_DATE \
     org.label-schema.vcs-ref=$VCS_REF \
-    org.label-schema.name="pmercury" \
-    org.label-schema.description="SSL/TLS Fingerprints output in json format and split by protocol type" \
+    org.label-schema.name="grafana" \
+    org.label-schema.description="Grafana dashboard visualization for time-series data" \
     org.label-schema.url="https://github.com/1computerguy/secure-threat-monitor" \
     org.label-schema.vcs-url="https://github.com/1computerguy/secure-threat-monitor" \
-    org.label-schema.docker.cmd="docker run --rm -it grafana:"
+    org.label-schema.docker.cmd="docker run --rm -it grafana:7.3.1-custom"
 
 USER root
 
@@ -19,6 +19,7 @@ ARG GF_INSTALL_IMAGE_RENDERER_PLUGIN="false"
 ENV GF_PATHS_PLUGINS="/var/lib/grafana-plugins"
 
 RUN mkdir -p "$GF_PATHS_PLUGINS" && \
+    addgroup grafana && adduser grafana grafana && \
     chown -R grafana:grafana "$GF_PATHS_PLUGINS"
 
 RUN if [ $GF_INSTALL_IMAGE_RENDERER_PLUGIN = "true" ]; then \
