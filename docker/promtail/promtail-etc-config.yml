@@ -24,7 +24,6 @@ scrape_configs:
               source: query_date
               format: RFC3339
             ip_status: ip_status
-
       - labels:
           report_db:
           ip_addr:
@@ -65,7 +64,7 @@ scrape_configs:
           - localhost
         labels:
           job: checkip
-          __path__: /var/log/checkip/checkip.json*
+          __path__: /var/log/checkip/checkip.json
 
   - job_name: pmercury_tls
     pipeline_stages:
@@ -99,7 +98,7 @@ scrape_configs:
           - localhost
         labels:
           job: pmercury_tls
-          __path__: /var/log/pmercury/tls_pmercury.json*
+          __path__: /var/log/pmercury/tls_pmercury.json
 
   - job_name: pmercury_tls_server
     pipeline_stages:      
@@ -127,4 +126,4 @@ scrape_configs:
           - localhost
         labels:
           job: pmercury_tls_server
-          __path__: /var/log/pmercury/tls_server_pmercury.json*
+          __path__: /var/log/pmercury/tls_server_pmercury.json
