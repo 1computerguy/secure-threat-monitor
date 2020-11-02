@@ -8,4 +8,6 @@ This system was designed as a result of my Master's thesis and focuses on analyz
   - sFlow Collector
   - check_ip.py (Custom tool using urlhaus.abuse.ch and AlienVault OTX for malicious IP detection)
   - Prometheus (https://github.com/prometheus/prometheus)
+  - Loki (https://github.com/grafana/loki)
+  - VictoriaMetrics (https://github.com/VictoriaMetrics/VictoriaMetrics)
   - Grafana (https://github.com/grafana/grafana)
