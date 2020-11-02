@@ -6,6 +6,6 @@ This system was designed as a result of my Master's thesis and focuses on analyz
   - Cisco Mercury (https://github.com/cisco/mercury)
   - NetCap (https://github.com/dreadl0ck/netcap/tree/v0.5)
   - sFlow Collector
-  - check_ip.py (forked version of https://github.com/NewBee119/check_ip)
+  - check_ip.py (Custom tool using urlhaus.abuse.ch and AlienVault OTX for malicious IP detection)
   - Prometheus (https://github.com/prometheus/prometheus)
   - Grafana (https://github.com/grafana/grafana)
