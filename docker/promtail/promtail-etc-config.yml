@@ -74,7 +74,9 @@ scrape_configs:
             dst_ip: dst_ip
             src_port: src_port
             dst_port: dst_port
-            timestamp: event_start
+            timestamp:
+              source: event_start
+              format: RFC3339Nano
             fingerprints:
             tls:
       - json:
@@ -108,7 +110,9 @@ scrape_configs:
             dst_ip: dst_ip
             src_port: src_port
             dst_port: dst_port
-            timestamp: event_start
+            timestamp:
+              source: event_start
+              format: RFC3339Nano
             fingerprints:
       - json:
           expressions:

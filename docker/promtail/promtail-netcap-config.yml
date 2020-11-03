@@ -1,5 +1,5 @@
 server:
-  http_listen_port: 9080
+  http_listen_port: 9081
   grpc_listen_port: 0
 
 positions:
@@ -17,7 +17,9 @@ scrape_configs:
             dst_ip: DstIP
             src_port: SrcPort
             dst_port: DstPort
-            timestamp: Timestamp
+            timestamp:
+              source: Timestamp
+              format: UnixMs
             fingerprints: Ja3
             server_name: SNI
             cipher_suites: CipherSuites
@@ -55,7 +57,9 @@ scrape_configs:
             dst_ip: DstIP
             src_port: SrcPort
             dst_port: DstPort
-            timestamp: Timestamp
+            timestamp:
+              source: Timestamp
+              format: UnixMs
             fingerprints: Ja3s
             src_mac: SrcMAC
             dst_mac: DstMAC
@@ -83,7 +87,9 @@ scrape_configs:
     pipeline_stages:
       - json:
           expressions:
-            timestamp: Timestamp
+            timestamp:
+              source: Timestamp
+              format: UnixMs
             questions: Questions
             src_ip: SrcIP
             dst_ip: DstIP
@@ -111,7 +117,9 @@ scrape_configs:
     pipeline_stages:
       - json:
           expressions:
-            timestamp: Timestamp
+            timestamp:
+              source: Timestamp
+              format: UnixMs
             src_mac: SrcMAC
             dst_mac: DstMAC
             ether_type: EthernetType
@@ -133,7 +141,9 @@ scrape_configs:
     pipeline_stages:
       - json:
           expressions:
-            timestamp_begin: TimestampFirst
+            timestamp:
+              source: TimestampFirst
+              format: UnixMs
             timestamp_end: TimestampLast
             link_protocol: LinkProto
             network_protocol: NetworkProto
@@ -148,7 +158,7 @@ scrape_configs:
             packets: NumPackets
             total_size: TotalSize
       - labels:
-        timestamp_begin:
+        timestamp:
         timestamp_end:
         link_protocol:
         network_protocol:

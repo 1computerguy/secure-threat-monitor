@@ -238,26 +238,6 @@ services:
         source: ./docker/promtail/promtail-netcap-config.yml
         target: /etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
-  vmagent:
-    container_name: vmagent
-    image: victoriametrics/vmagent:v1.44.0-cluster
-    depends_on:
-      - "victoriametrics"
-    ports:
-      - 8429:8429
-    volumes:
-      - type: volume
-        source: vmagent-data
-        target: /vmagentdata
-      - type: bind
-        source: ./docker/prometheus/prometheus.yml
-        target: /etc/prometheus/prometheus.yml
-    command:
-      - '--promscrape.config=/etc/prometheus/prometheus.yml'
-      - '--remoteWrite.url=http://victoriametrics:8428/api/v1/write'
-    networks:
-      - monitor-net
-    restart: unless-stopped
   victoriametrics:
     container_name: victoriametrics
     image: victoriametrics/victoria-metrics:v1.44.0
