@@ -26,9 +26,6 @@ services:
       - type: volume
         source: vm-data
         target: /data/victoria
-      - type: volume
-        source: vmagent-data
-        target: /data/vmagent
     command: ["/bin/bash"]
     network_mode: none
   netcap:
@@ -190,7 +187,6 @@ services:
       - sflow-prometheus
       - promtail-etc
       - promtail-netcap
-      - vmagent
       - loki
       - victoriametrics
       - grafana
@@ -288,7 +284,6 @@ services:
 
 volumes:
   grafana-data:
-  vmagent-data:
   prometheus-data:
     driver: local
     driver_opts:
