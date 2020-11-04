@@ -176,6 +176,9 @@ services:
       - type: bind
         source: /var/lib/docker/
         target: /var/lib/docker:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
     restart: unless-stopped
     networks:
       - monitor-net
