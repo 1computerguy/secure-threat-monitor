@@ -51,7 +51,8 @@
         "ethernet1.pciSlotNumber": "192",
         "ethernet1.wakeonpcktrcv": "false",
         "ethernet1.allowguestconnectioncontrol": "true",
-        "ethernet1.generatedAddressOffset": "10"
+        "ethernet1.generatedAddressOffset": "10",
+        "ethernet1.noPromisc": "False"
       },
       "iso_checksum": "{{ user `iso_checksum` }}",
       "iso_urls": ["{{ user `iso_file` }}","{{ user `iso_url` }}"],
