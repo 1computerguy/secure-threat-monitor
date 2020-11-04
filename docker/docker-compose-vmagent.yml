@@ -1,0 +1,324 @@
+version: "3.7"
+services:
+  data-mgmt:
+    image: ubuntu:20.04
+    restart: "no"
+    container_name: data-mgmt
+    volumes:
+      - type: volume
+        source: netcap-data
+        target: /data/netcap
+      - type: volume
+        source: pmercury-data
+        target: /data/pmercury
+      - type: volume
+        source: checkip-data
+        target: /data/checkip
+      - type: volume
+        source: loki-data
+        target: /data/loki
+      - type: volume
+        source: grafana-data
+        target: /data/grafana
+      - type: volume
+        source: vmagent-data
+        target: /data/prometheus
+      - type: volume
+        source: vm-data
+        target: /data/victoria
+    command: >-
+      /bin/bash
+      while true; do sleep 1; done
+    network_mode: none
+  netcap:
+    build:
+      context: ./docker/netcap
+      dockerfile: Dockerfile
+    image: dreadl0ck/netcap:v0.5.9-custom
+    container_name: netcap
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - type: volume
+        source: netcap-data
+        target: /capture/netcap
+      - type: bind
+        source: ./docker/netcap/config.conf
+        target: /capture/capture.conf
+    command: >-
+      capture
+      -config
+      /capture/capture.conf
+    depends_on:
+      - netcap-vmagent
+  netcap-vmagent:
+    image: qoomon/docker-host:2.5.0
+    cap_add:
+      - 'NET_ADMIN'
+      - 'NET_RAW' 
+    restart: on-failure
+    networks:
+      - monitor-net
+  pmercury:
+    build:
+      context: ./docker/pmercury
+      dockerfile: Dockerfile
+    image: pmercury:v1.0
+    container_name: pmercury
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      INT: ens192
+    volumes:
+      - type: volume
+        source: pmercury-data
+        target: /output
+  checkip:
+    build:
+      context: ./docker/checkip
+      dockerfile: Dockerfile
+    image: checkip:v1.0
+    restart: "unless-stopped"
+    networks:
+      - monitor-net
+    environment:
+      API_KEY: 0f6b86cdae8180b3a9b26e32dc3224acc7f00e887d8d542de837599df8c7bc6f
+      INFILE: /checkip/pmercury/tls_pmercury.json
+    volumes:
+      - type: volume
+        source: checkip-data
+        target: /checkip/output
+      - type: volume
+        source: pmercury-data
+        target: /checkip/pmercury
+  sflow-agent:
+    image: sflow/host-sflow:latest
+    container_name: sflow-agent
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - COLLECTOR=localhost
+      - NET=ens192
+      - DROPMON=enable
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock:ro
+  sflow-vmagent:
+    image: sflow/prometheus:latest
+    container_name: sflow-vmagent
+    restart: unless-stopped
+    networks:
+      - monitor-net
+    ports:
+      - 6343:6343/udp
+      - 8008:8008
+  nodestats:
+    image: prom/node-exporter:v1.0.1
+    container_name: nodestats
+    ports:
+      - 9100:9100
+    volumes:
+      - type: bind
+        source: /proc
+        target: /host/proc:ro
+      - type: bind
+        source: /sys
+        target: /host/sys:ro
+      - type: bind
+        source: /
+        target: /rootfs:ro
+    command: >-
+      --path.procfs=/host/proc
+      --path.sysfs=/host/sys
+      --collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)"
+    restart: unless-stopped
+    networks:
+      - monitor-net
+  cadvisor:
+    image: google/cadvisor:v0.33.0
+    container_name: cadvisor
+    ports:
+      - 8080:8080
+    volumes:
+      - type: bind
+        source: /
+        target: /rootfs:ro
+      - type: bind
+        source: /var/run
+        target: /var/run:rw
+      - type: bind
+        source: /sys
+        target: /sys:ro
+      - type: bind
+        source: /var/lib/docker/
+        target: /var/lib/docker:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
+    restart: unless-stopped
+    networks:
+      - monitor-net
+    depends_on:
+      - checkip
+      - netcap
+      - pmercury
+      - sflow-agent
+      - sflow-vmagent
+      - promtail-etc
+      - promtail-netcap
+      - loki
+      - vmagent
+      - victoriametrics
+      - grafana
+  loki:
+    image: grafana/loki:2-0-with-ingester-panic-fix-aee7ad3
+    container_name: loki
+    ports:
+      - 3100:3100
+    restart: unless-stopped
+    networks:
+      - monitor-net
+    volumes:
+      - type: volume
+        source: loki-data
+        target: /loki
+      - type: bind
+        source: ./docker/loki/loki-config.yml
+        target: /etc/loki/local-config.yml
+    command: -config.file=/etc/loki/local-config.yaml
+  promtail-etc:
+    image: grafana/promtail:master-081cc02
+    container_name: promtail-etc
+    restart: unless-stopped
+    networks:
+      - monitor-net
+    volumes:
+      - type: volume
+        source: pmercury-data
+        target: /var/log/pmercury
+      - type: volume
+        source: checkip-data
+        target: /var/log/checkip
+      - type: bind
+        source: ./docker/promtail/promtail-etc-config.yml
+        target: /etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+  promtail-netcap:
+    image: grafana/promtail:master-081cc02
+    container_name: promtail-netcap
+    restart: unless-stopped
+    networks:
+      - monitor-net
+    volumes:
+      - type: volume
+        source: netcap-data
+        target: /var/log/netcap
+      - type: bind
+        source: ./docker/promtail/promtail-netcap-config.yml
+        target: /etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+  vmagent:
+    container_name: vmagent
+    image: victoriametrics/vmagent:v1.45.0-cluster
+    depends_on:
+      - "victoriametrics"
+    restart: unless-stopped
+    ports:
+      - 8429:8429
+    volumes:
+      - type: volume
+        source: vmagent-data
+        target: /vmagentdata
+      - type: bind
+        source: ./docker/vmagent/datasources.yml
+        target: /etc/prometheus/datasources.yml
+    command:
+      - '--promscrape.config=/etc/prometheus/datasources.yml'
+      - '--remoteWrite.url=http://victoriametrics:8428/api/v1/write'
+    networks:
+      - monitor-net
+    links:
+      - netcap-vmagent
+  victoriametrics:
+    container_name: victoriametrics
+    image: victoriametrics/victoria-metrics:v1.45.0
+    ports:
+      - 8428:8428
+    volumes:
+      - type: volume
+        source: vm-data
+        target: /storage
+    command:
+      - '--storageDataPath=/storage'
+      - '--httpListenAddr=:8428'
+    networks:
+      - monitor-net
+    restart: unless-stopped
+  grafana:
+    build:
+      context: ./docker/grafana
+      dockerfile: Dockerfile
+      args:
+        - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel,simpod-json-datasource,natel-plotly-panel,ae3e-plotly-panel,petrslavotinek-carpetplot-panel,digiapulssi-breadcrumb-panel
+    image: grafana:v7.3.1-custom
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    volumes:
+      - type: volume
+        source: grafana-data
+        target: /var/lib/grafana
+      - type: bind
+        source: ./docker/grafana/grafana.ini
+        target: /etc/grafana/grafana.ini
+      - type: bind
+        source: ./docker/grafana/resources
+        target: /etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_PATHS_PROVISIONING="/etc/grafana/provisioning"
+      - GF_PATHS_DATA="/var/lib/grafana"
+    networks:
+      - monitor-net
+
+volumes:
+  grafana-data:
+  vmagent-data:
+  checkip-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/log/checkip
+      o: bind
+  netcap-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/log/netcap
+      o: bind
+  pmercury-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/log/pmercury
+      o: bind
+  loki-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /storage/loki
+      o: bind
+  vm-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /storage/vmdata
+      o: bind
+
+networks:
+  monitor-net:
+    driver: bridge
