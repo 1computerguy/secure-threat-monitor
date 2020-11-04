@@ -1,24 +1,24 @@
 #!/usr/bin/env python
 
 #  This script tells if a File, IP, Domain or URL may be malicious according to the data in OTX
-
-from OTXv2 import OTXv2
 import IndicatorTypes
 import json
 import geoip2.database
 import socket
 import requests
 import os
-from datetime import datetime
-from dateutil.parser import parse
 import time
 import logging
 
+from datetime import datetime
+from dateutil.parser import parse
+from OTXv2 import OTXv2
 
 logger = logging.getLogger(__name__)
 
-# Get a nested key from a dict, without having to do loads of ifs
 def getValue(results, keys):
+    '''Get a nested key from a dict, without having to do loads of ifs
+    '''
     if type(keys) is list and len(keys) > 0:
 
         if type(results) is dict:
@@ -91,6 +91,8 @@ def ip(otx, ip, mmdb, query_time):
     return alerts
 
 def hostname(host, mmdb, query_url, query_time):
+    '''Query urlhaus.abuse.ch for malicious host checking
+    '''
     alerts = {}
     ip_addr = ''
     report_db = ''
@@ -165,6 +167,8 @@ def hostname(host, mmdb, query_url, query_time):
     return alerts
 
 def main():
+    '''Run some automated tests for ip and hostname methods
+    '''
     api_key = os.environ.get('API_KEY')
     otx_server = 'https://otx.alienvault.com/'
     otx = OTXv2(api_key, server=otx_server)
