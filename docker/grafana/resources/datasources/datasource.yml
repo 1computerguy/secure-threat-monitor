@@ -6,9 +6,8 @@ datasources:
     access: proxy
     url: http://victoriametrics:8428
     isDefault: true
-    id: 1
     orgId: 1
-    editable: false
+    editable: true
     jsonData:
       timeInterval: 15s
   - name: Loki
@@ -16,13 +15,7 @@ datasources:
     access: proxy
     url: http://loki:3100
     isDefault: false
-    database: ''
-    user: ''
-    password: ''
-    basicAuth: false
-    id: 2
     orgId: 2
-    readOnly: false
+    editable: true
     jsonData:
-      timeInterval: 15s
       keepCookies: []
