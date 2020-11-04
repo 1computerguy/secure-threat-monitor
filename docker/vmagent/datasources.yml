@@ -3,14 +3,11 @@ global:
   scrape_timeout: 30s
 
 scrape_configs:
-  - job_name: prometheus
-    static_configs:
-      - targets: ["prometheus:9090"]
   - job_name: netcap
     metrics_path: /metrics
     scheme: http
     static_configs:
-      - targets: ["netcap-prometheus:7777"]
+      - targets: ["netcap-vmagent:7777"]
   - job_name: "node-stats"
     static_configs:
       - targets: ["nodestats:9100"]
@@ -20,11 +17,11 @@ scrape_configs:
   - job_name: "sflow-rt-analyzer"
     metrics_path: /prometheus/analyzer/txt
     static_configs:
-      - targets: ["sflow-prometheus:8008"]
+      - targets: ["sflow-vmagent:8008"]
   - job_name: "sflow-rt-metrics"
     metrics_path: /prometheus/metrics/ALL/ALL/txt
     static_configs:
-      - targets: ["sflow-prometheus:8008"]
+      - targets: ["sflow-vmagent:8008"]
     metric_relabel_configs:
       - source_labels: ["agent", "datasource"]
         separator: ":"
@@ -32,7 +29,7 @@ scrape_configs:
   - job_name: "sflow-rt-countries"
     metrics_path: /app/prometheus/scripts/export.js/flows/ALL/txt
     static_configs:
-      - targets: ["sflow-prometheus:8008"]
+      - targets: ["sflow-vmagent:8008"]
     params:
       metric: ["sflow_country_bps"]
       key: ["null:[country:ipsource:both]:unknown","null:[country:ipdestination:both]:unknown"]

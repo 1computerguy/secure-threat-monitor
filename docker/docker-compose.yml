@@ -21,12 +21,14 @@ services:
         source: grafana-data
         target: /data/grafana
       - type: volume
-        source: prometheus-data
+        source: vmagent-data
         target: /data/prometheus
       - type: volume
         source: vm-data
         target: /data/victoria
-    command: ["/bin/bash"]
+    command: >-
+      /bin/bash
+      while true; do sleep 1; done
     network_mode: none
   netcap:
     build:
@@ -48,8 +50,8 @@ services:
       -config
       /capture/capture.conf
     depends_on:
-      - netcap-prometheus
-  netcap-prometheus:
+      - netcap-vmagent
+  netcap-vmagent:
     image: qoomon/docker-host:2.5.0
     cap_add:
       - 'NET_ADMIN'
@@ -102,37 +104,15 @@ services:
       - type: bind
         source: /var/run/docker.sock
         target: /var/run/docker.sock:ro
-  sflow-prometheus:
+  sflow-vmagent:
     image: sflow/prometheus:latest
-    container_name: sflow-prometheus
+    container_name: sflow-vmagent
     restart: unless-stopped
     networks:
       - monitor-net
     ports:
       - 6343:6343/udp
       - 8008:8008
-  prometheus:
-    image: prom/prometheus:v2.22.0
-    container_name: prometheus
-    restart: unless-stopped
-    volumes:
-      - type: bind
-        source: ./docker/prometheus/prometheus.yml
-        target: /etc/prometheus/prometheus.yml
-      - type: volume
-        source: prometheus-data
-        target: /prometheus
-    command: >-
-      --config.file=/etc/prometheus/prometheus.yml
-      --storage.tsdb.path=/prometheus
-      --web.console.libraries=/usr/share/prometheus/console_libraries
-      --web.console.templates=/usr/share/prometheus/consoles
-    ports:
-      - 9090:9090
-    networks:
-      - monitor-net
-    links:
-      - netcap-prometheus
   nodestats:
     image: prom/node-exporter:v1.0.1
     container_name: nodestats
@@ -141,10 +121,10 @@ services:
     volumes:
       - type: bind
         source: /proc
-        target: /host/proc
+        target: /host/proc:ro
       - type: bind
         source: /sys
-        target: /host/sys
+        target: /host/sys:ro
       - type: bind
         source: /
         target: /rootfs:ro
@@ -184,10 +164,11 @@ services:
       - netcap
       - pmercury
       - sflow-agent
-      - sflow-prometheus
+      - sflow-vmagent
       - promtail-etc
       - promtail-netcap
       - loki
+      - vmagent
       - victoriametrics
       - grafana
   loki:
@@ -237,9 +218,31 @@ services:
         source: ./docker/promtail/promtail-netcap-config.yml
         target: /etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
+  vmagent:
+    container_name: vmagent
+    image: victoriametrics/vmagent:v1.45.0-cluster
+    depends_on:
+      - "victoriametrics"
+    restart: unless-stopped
+    ports:
+      - 8429:8429
+    volumes:
+      - type: volume
+        source: vmagent-data
+        target: /vmagentdata
+      - type: bind
+        source: ./docker/vmagent/datasources.yml
+        target: /etc/prometheus/datasources.yml
+    command:
+      - '--promscrape.config=/etc/prometheus/datasources.yml'
+      - '--remoteWrite.url=http://victoriametrics:8428/api/v1/write'
+    networks:
+      - monitor-net
+    links:
+      - netcap-vmagent
   victoriametrics:
     container_name: victoriametrics
-    image: victoriametrics/victoria-metrics:v1.44.0
+    image: victoriametrics/victoria-metrics:v1.45.0
     ports:
       - 8428:8428
     volumes:
@@ -284,12 +287,7 @@ services:
 
 volumes:
   grafana-data:
-  prometheus-data:
-    driver: local
-    driver_opts:
-      type: none
-      device: /var/log/prometheus
-      o: bind
+  vmagent-data:
   checkip-data:
     driver: local
     driver_opts:
