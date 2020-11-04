@@ -36,104 +36,121 @@ def getValue(results, keys):
         return results
 
 def ip(otx, ip, mmdb, query_time):
+    '''Query AlienVault OTX for malicious IP checking
+    '''
     alerts = {}
-    url_set = set()
+    report_db = ''
+    latitude = ''
+    longitude = ''
+    full_url_list = []
+    top_five_urls = [] # List of 5 most recent urls
+    url_set = set() # Remove duplicates from full_url_list
+    first_reported = ''
+    last_reported = ''
+    url_status = ''
 
     try:
         result = otx.get_indicator_details_full(IndicatorTypes.IPv4, ip)
         pulses = getValue(result['general'], ['pulse_info', 'pulses'])
         if pulses:
-            alerts['report_db'] = 'otx.alienvault.com'
-            alerts['ip_addr'] = ip
-            alerts['latitude'] = result['geo']['latitude']
-            alerts['longitude'] = result['geo']['longitude']
-            urls = getValue(result['passive_dns'], ['passive_dns'])
+            report_db = 'otx.alienvault.com'
+            latitude = result['geo']['latitude']
+            longitude = result['geo']['longitude']
+            full_url_list = getValue(result['passive_dns'], ['passive_dns'])
 
-            for url in urls:
+            for url in full_url_list:
                 if 'hostname' and 'flag_url' in url:
                     url_set.add(url['hostname']+'/'+url['flag_url'])
                 
-            alerts['urls'] = list(url_set)[:5]
-            alerts['first_reported'] = parse(urls[-1]['first']).isoformat()
-            alerts['last_reported'] = parse(urls[0]['last']).isoformat()
-            alerts['query_date'] = query_time
-            alerts['url_status'] = 'potentially_malicious'
+            top_five_urls = list(url_set)[:5]
+            first_reported = parse(full_url_list[-1]['first']).isoformat()
+            last_reported = parse(full_url_list[0]['last']).isoformat()
+            url_status = 'potentially_malicious'
         else:
             response = geoip2.database.Reader(mmdb).city(ip)
-            alerts['report_db'] = 'otx.alienvault.com'
-            alerts['ip_addr'] = ip
-            alerts['latitude'] = response.location.latitude
-            alerts['longitude'] = response.location.longitude
+            report_db = 'otx.alienvault.com'
+            latitude = response.location.latitude
+            longitude = response.location.longitude
             try:
-                alerts['urls'] = [socket.gethostbyaddr(ip)[0]]
+                top_five_urls = [socket.gethostbyaddr(ip)[0]]
             except socket.herror:
-                alerts['urls'] = []
+                top_five_urls = []
             
-            alerts['first_reported'] = ''
-            alerts['last_reported'] = ''
-            alerts['query_date'] = query_time
-            alerts['url_status'] = 'likely_benign'
+            first_reported = ''
+            last_reported = ''
+            url_status = 'likely_benign'
 
     except Exception as e:
         logger.exception(" :  You received this error with the OTX API Data... {}".format(e))
+
+    # Set alerts from variables
+    alerts = {'report_db': report_db, 'ip_addr': ip, 'latitude': latitude, 'longitude': longitude,
+              'urls': top_five_urls, 'first_reported': first_reported, 'last_reported': last_reported,
+              'query_date': query_time, 'url_status': url_status}
 
     return alerts
 
 def hostname(host, mmdb, query_url, query_time):
     alerts = {}
-    url_list = []
+    ip_addr = ''
+    report_db = ''
+    latitude = ''
+    longitude = ''
+    full_url_list = []
+    url_set = set() # Remove duplicates from full_url_list
+    first_reported = ''
+    last_reported = ''
+    url_status = ''
     __version__ = '0.0.2'
 
     try:
         r = requests.post("{}host/".format(query_url), headers={"User-Agent" : "urlhaus-python-client-{}".format(__version__)}, data={"host": host})
         if r.ok:
+            geo_reader = geoip2.database.Reader(mmdb)
             if r.json()['query_status'] == "no_results":
-                alerts['report_db'] = 'urlhaus.abuse.ch'
+                report_db = 'urlhaus.abuse.ch'
                 try:
-                    alerts['ip_addr'] = socket.gethostbyname(host)
+                    ip_addr = socket.gethostbyname(host)
                 except socket.error:
-                    alerts['ip_addr'] = ''
+                    ip_addr = ''
 
-                try:
-                    response = geoip2.database.Reader(mmdb).city(alerts['ip_addr'])
-                    alerts['latitude'] = response.location.latitude
-                    alerts['longitude'] = response.location.longitude
-                except:
-                    alerts['latitude'] = ''
-                    alerts['longitude'] = ''                
+                if ip_addr:
+                    try:
+                        latitude = geo_reader.city(ip_addr).location.latitude
+                        longitude = geo_reader.city(ip_addr).location.longitude
+                    except:
+                        latitude = ''
+                        longitude = ''                
 
-                alerts['urls'] = [host]
-                alerts['first_reported'] = ''
-                alerts['last_reported'] = ''
-                alerts['query_date'] = query_time
-                alerts['url_status'] = 'likely_benign'
+                full_url_list = [host]
+                first_reported = ''
+                last_reported = ''
+                url_status = 'likely_benign'
 
             else:
-                alerts['report_db'] = 'urlhaus.abuse.ch'
+                report_db = 'urlhaus.abuse.ch'
                 try:
-                    alerts['ip_addr'] = socket.gethostbyname(host)
+                    ip_addr = socket.gethostbyname(host)
                 except socket.error:
-                    alerts['ip_addr'] = ''
+                    ip_addr = ''
 
-                try:
-                    response = response = geoip2.database.Reader(mmdb).city(alerts['ip_addr'])
-                    alerts['latitude'] = response.location.latitude
-                    alerts['longitude'] = response.location.longitude
-                except:
-                    alerts['latitude'] = ''
-                    alerts['longitude'] = ''
+                if ip_addr:
+                    try:
+                        latitude = geo_reader.city(ip_addr).location.latitude
+                        longitude = geo_reader.city(ip_addr).location.longitude
+                    except:
+                        latitude = ''
+                        longitude = ''
                 
                 for url in r.json()['urls']:
-                    url_list.append(url['url'].split('//', 2)[1])
+                    url_set.add(url['url'].split('//', 2)[1])
 
-                alerts['urls'] = url_list[:5]
-                alerts['first_reported'] = parse(r.json()['firstseen']).isoformat()
-                alerts['last_reported'] = ''
-                alerts['query_date'] = query_time
+                full_url_list = list(url_set)[:5]
+                first_reported = parse(r.json()['firstseen']).isoformat()
                 if r.json()['urls'][0]['url_status'] == 'online':
-                    alerts['url_status'] = 'potentially_malicious'
+                    url_status = 'potentially_malicious'
                 else:
-                    alerts['url_status'] = 'potentially_malicious_but_offline'
+                    url_status = 'potentially_malicious_but_offline'
 
         else:
             logger.error(" :  Unable to read response as json")
@@ -141,6 +158,10 @@ def hostname(host, mmdb, query_url, query_time):
     except Exception as e:
         logger.exception(" :  Unable to connect to URLHaus API. Recieved the following error {}".format(e))
 
+    # Set alerts from variables
+    alerts = {'report_db': report_db, 'ip_addr': ip_addr, 'latitude': latitude, 'longitude': longitude,
+              'urls': full_url_list, 'first_reported': first_reported, 'last_reported': last_reported,
+              'query_date': query_time, 'url_status': url_status}
     return alerts
 
 def main():

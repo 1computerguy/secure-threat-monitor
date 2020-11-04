@@ -15,8 +15,10 @@ from queue import Queue
 from threading import Thread
 from collections import deque
 
+# Define logger for cross appliction logging consistency
 logger = logging.getLogger(__name__)
 
+# Create custom logging class for exceptions
 class OneLineExceptionFormatter(logging.Formatter):
     def formatException(self, exc_info):
         result = super().formatException(exc_info)
@@ -28,6 +30,8 @@ class OneLineExceptionFormatter(logging.Formatter):
             result = result.replace("\n", "")
         return result
 
+# Add multithreading to application so we don't run into a data
+# overrun on a single process (query can take up to 10+ seconds) 
 class DownloadWorker(Thread):
 
     def __init__(self, queue):
@@ -45,6 +49,8 @@ class DownloadWorker(Thread):
                 self.queue.task_done()
 
 def write_data(output, filename):
+    '''Write check_ip data out to file
+    '''
     try:
         with open(filename, 'a') as outfile:
             json.dump(output, outfile)
@@ -137,7 +143,7 @@ def main():
 
         queue = Queue()
         
-        for x in range(4):
+        for _ in range(4):
             worker = DownloadWorker(queue)
             worker.daemon = True
             worker.start()
