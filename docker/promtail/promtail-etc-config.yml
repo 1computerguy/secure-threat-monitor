@@ -64,7 +64,7 @@ scrape_configs:
           - localhost
         labels:
           job: checkip
-          __path__: /var/log/checkip/checkip.json
+          __path__: /var/log/checkip/output.json
 
   - job_name: pmercury_tls
     pipeline_stages:
