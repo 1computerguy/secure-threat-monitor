@@ -20,18 +20,18 @@ scrape_configs:
             urls: urls
             first_reported: first_seen
             last_reported: last_seen
-            timestamp:
-              source: query_date
-              format: RFC3339
             ip_status: ip_status
+      - timestamp:
+          source: query_date
+          format: "2020-11-05T01:40:27.942496"
       - labels:
+          timestamp:
           report_db:
           ip_addr:
           latitude:
           longitude:
           first_reported:
           last_reported:
-          timestamp:
           ip_status:
 
       - metrics:
@@ -74,11 +74,11 @@ scrape_configs:
             dst_ip: dst_ip
             src_port: src_port
             dst_port: dst_port
-            timestamp:
-              source: event_start
-              format: RFC3339Nano
             fingerprints:
             tls:
+      - timestamp:
+          source: event_start
+          format: "1604540427.5977054"
       - json:
           expressions:
             tls_fp: tls
@@ -88,11 +88,11 @@ scrape_configs:
             server_name:
           source: tls
       - labels:
+          timestamp:
           src_ip:
           dst_ip:
           src_port:
           dst_port:
-          timestamp:
           tls_fp:
           server_name:
     static_configs:
@@ -110,20 +110,20 @@ scrape_configs:
             dst_ip: dst_ip
             src_port: src_port
             dst_port: dst_port
-            timestamp:
-              source: event_start
-              format: RFC3339Nano
             fingerprints:
+      - timestamp:
+          source: event_start
+          format: "1604540427.5977054"
       - json:
           expressions:
             tls_server_fp: tls_server
           source: fingerprints
       - labels:
+          timestamp:
           src_ip:
           dst_ip:
           src_port:
           dst_port:
-          timestamp:
           tls_server_fp:
     static_configs:
       - targets:

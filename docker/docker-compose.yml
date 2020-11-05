@@ -53,6 +53,7 @@ services:
       - netcap-vmagent
   netcap-vmagent:
     image: qoomon/docker-host:2.5.0
+    container_name: netcap-vmagent
     cap_add:
       - 'NET_ADMIN'
       - 'NET_RAW' 
@@ -186,13 +187,16 @@ services:
       - type: bind
         source: ./docker/loki/loki-config.yml
         target: /etc/loki/local-config.yml
-    command: -config.file=/etc/loki/local-config.yaml
+    command: >-
+      -config.file=/etc/loki/local-config.yaml
   promtail-etc:
     image: grafana/promtail:master-081cc02
     container_name: promtail-etc
     restart: unless-stopped
     networks:
       - monitor-net
+    ports:
+      - 9080:9080
     volumes:
       - type: volume
         source: pmercury-data
@@ -203,13 +207,16 @@ services:
       - type: bind
         source: ./docker/promtail/promtail-etc-config.yml
         target: /etc/promtail/config.yml
-    command: -config.file=/etc/promtail/config.yml
+    command: >-
+      -config.file=/etc/promtail/config.yml
   promtail-netcap:
     image: grafana/promtail:master-081cc02
     container_name: promtail-netcap
     restart: unless-stopped
     networks:
       - monitor-net
+    ports:
+      - 9081:9081
     volumes:
       - type: volume
         source: netcap-data
@@ -233,9 +240,9 @@ services:
       - type: bind
         source: ./docker/vmagent/datasources.yml
         target: /etc/prometheus/datasources.yml
-    command:
-      - '--promscrape.config=/etc/prometheus/datasources.yml'
-      - '--remoteWrite.url=http://victoriametrics:8428/api/v1/write'
+    command: >-
+      --promscrape.config=/etc/prometheus/datasources.yml
+      --remoteWrite.url=http://victoriametrics:8428/api/v1/write
     networks:
       - monitor-net
     links:
@@ -249,9 +256,9 @@ services:
       - type: volume
         source: vm-data
         target: /storage
-    command:
-      - '--storageDataPath=/storage'
-      - '--httpListenAddr=:8428'
+    command: >-
+      --storageDataPath=/storage
+      --httpListenAddr=:8428
     networks:
       - monitor-net
     restart: unless-stopped
