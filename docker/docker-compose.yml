@@ -105,9 +105,9 @@ services:
       - type: bind
         source: /var/run/docker.sock
         target: /var/run/docker.sock:ro
-  sflow-vmagent:
-    image: sflow/prometheus:latest
-    container_name: sflow-vmagent
+  sflow-rt:
+    image: sflow/sflow-rt:latest
+    container_name: sflow-rt
     restart: unless-stopped
     networks:
       - monitor-net

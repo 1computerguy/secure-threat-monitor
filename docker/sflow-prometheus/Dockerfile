@@ -1,1 +1,0 @@
-FROM sflow/prometheus:latest
