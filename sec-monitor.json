@@ -195,13 +195,8 @@
     },
     {
       "type": "file",
-      "source": "{{ user `env_dir` }}/maxmind/",
-      "destination": "/home/secadmin/docker/netcap/resources"
-    },
-    {
-      "type": "file",
-      "source": "{{ user `env_dir` }}/maxmind/GeoLite2-City.mmdb",
-      "destination": "/home/secadmin/docker/checkip"
+      "source": "{{ user `env_dir` }}/maxmind/*",
+      "destination": "/home/secadmin/"
     },
     {
       "type": "shell",

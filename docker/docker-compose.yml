@@ -79,6 +79,7 @@ services:
       context: ./docker/checkip
       dockerfile: Dockerfile
     image: checkip:v1.0
+    container_name: checkip
     restart: "unless-stopped"
     networks:
       - monitor-net
@@ -105,15 +106,27 @@ services:
       - type: bind
         source: /var/run/docker.sock
         target: /var/run/docker.sock:ro
-  sflow-rt:
-    image: sflow/sflow-rt:latest
-    container_name: sflow-rt
+  sflow-vmagent:
+    image: sflow/prometheus:latest
+    container_name: sflow-vmagent
     restart: unless-stopped
     networks:
       - monitor-net
     ports:
       - 6343:6343/udp
       - 8008:8008
+    volumes:
+      - type: bind
+        source: ./maxmind/GeoLite2-ASN.mmdb
+        target: /resources/config/GeoLite2-ASN.mmdb
+      - type: bind
+        source: ./maxmind/GeoLite2-Country.mmdb
+        target: /resources/config/GeoLite2-Country.mmdb
+      - type: bind
+        source: ./docker/sflow-vmagent/local.conf
+        target: /sflow-rt/local.conf
+    command: >-
+      -Dsystem..propertyFiles=/sflow-rt/local.conf
   nodestats:
     image: prom/node-exporter:v1.0.1
     container_name: nodestats
@@ -122,10 +135,10 @@ services:
     volumes:
       - type: bind
         source: /proc
-        target: /host/proc:ro
+        target: /host/proc
       - type: bind
         source: /sys
-        target: /host/sys:ro
+        target: /host/sys
       - type: bind
         source: /
         target: /rootfs:ro
@@ -144,19 +157,19 @@ services:
     volumes:
       - type: bind
         source: /
-        target: /rootfs:ro
+        target: /rootfs
       - type: bind
         source: /var/run
         target: /var/run:rw
       - type: bind
         source: /sys
-        target: /sys:ro
+        target: /sys
       - type: bind
         source: /var/lib/docker/
-        target: /var/lib/docker:ro
-    privileged: true
-    devices:
-      - /dev/kmsg
+        target: /var/lib/docker
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
     restart: unless-stopped
     networks:
       - monitor-net
@@ -166,8 +179,7 @@ services:
       - pmercury
       - sflow-agent
       - sflow-vmagent
-      - promtail-etc
-      - promtail-netcap
+      - promtail
       - loki
       - vmagent
       - victoriametrics
@@ -189,9 +201,9 @@ services:
         target: /etc/loki/local-config.yml
     command: >-
       -config.file=/etc/loki/local-config.yaml
-  promtail-etc:
+  promtail:
     image: grafana/promtail:master-081cc02
-    container_name: promtail-etc
+    container_name: promtail
     restart: unless-stopped
     networks:
       - monitor-net
@@ -204,27 +216,14 @@ services:
       - type: volume
         source: checkip-data
         target: /var/log/checkip
-      - type: bind
-        source: ./docker/promtail/promtail-etc-config.yml
-        target: /etc/promtail/config.yml
-    command: >-
-      -config.file=/etc/promtail/config.yml
-  promtail-netcap:
-    image: grafana/promtail:master-081cc02
-    container_name: promtail-netcap
-    restart: unless-stopped
-    networks:
-      - monitor-net
-    ports:
-      - 9081:9081
-    volumes:
       - type: volume
         source: netcap-data
         target: /var/log/netcap
       - type: bind
-        source: ./docker/promtail/promtail-netcap-config.yml
+        source: ./docker/promtail/promtail.yml
         target: /etc/promtail/config.yml
-    command: -config.file=/etc/promtail/config.yml
+    command: >-
+      -config.file=/etc/promtail/config.yml
   vmagent:
     container_name: vmagent
     image: victoriametrics/vmagent:v1.45.0-cluster
@@ -266,8 +265,6 @@ services:
     build:
       context: ./docker/grafana
       dockerfile: Dockerfile
-      args:
-        - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel,simpod-json-datasource,natel-plotly-panel,ae3e-plotly-panel,petrslavotinek-carpetplot-panel,digiapulssi-breadcrumb-panel
     image: grafana:v7.3.1-custom
     container_name: grafana
     restart: unless-stopped
