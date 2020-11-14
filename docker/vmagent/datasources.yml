@@ -12,14 +12,23 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets: ["nodestats:9100"]
-  - job_name: "cadvisor"
+  - job_name: "loki-metrics"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["loki:3100"]
+  - job_name: "promtail-metrics"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["promtail:9080"]
+  - job_name: cadvisor
+    metrics_path: /metrics
     static_configs:
       - targets: ["cadvisor:8080"]
-  - job_name: "sflow-rt-analyzer"
+  - job_name: "sflow-vmagent-analyzer"
     metrics_path: /prometheus/analyzer/txt
     static_configs:
       - targets: ["sflow-vmagent:8008"]
-  - job_name: "sflow-rt-metrics"
+  - job_name: "sflow-vmagent-metrics"
     metrics_path: /prometheus/metrics/ALL/ALL/txt
     static_configs:
       - targets: ["sflow-vmagent:8008"]
@@ -27,7 +36,7 @@ scrape_configs:
       - source_labels: ["agent", "datasource"]
         separator: ":"
         target_label: instance
-  - job_name: "sflow-rt-countries"
+  - job_name: "sflow-vmagent-countries"
     metrics_path: /app/prometheus/scripts/export.js/flows/ALL/txt
     static_configs:
       - targets: ["sflow-vmagent:8008"]
@@ -40,3 +49,16 @@ scrape_configs:
       aggMode: ["sum"]
       minValue: ["1000"]
       maxFlows: ["100"]
+  - job_name: 'sflow-vmagent-asns'
+    metrics_path: /app/prometheus/scripts/export.js/flows/ALL/txt
+    static_configs:
+      - targets: ['sflow-vmagent.mysite.org:8008']
+    params:
+      metric: ['sflow_asn_bps']
+      key: ['null:[asn:ipsource:both]:unknown','null:[asn:ipdestination:both]:unknown']
+      label: ['src','dst']
+      value: ['bytes']
+      scale: ['8']
+      aggMode: ['sum']
+      minValue: ['1000']
+      maxFlows: ['100']

@@ -1,0 +1,303 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+client:
+  url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: netcap_tls_client_hello
+    pipeline_stages:
+      - json:
+          expressions:
+            src_ip: SrcIP
+            dst_ip: DstIP
+            src_port: SrcPort
+            dst_port: DstPort
+            fingerprints: Ja3
+            server_name: SNI
+            cipher_suites: CipherSuites
+            signature_algorithms: SignatureAlgs
+            extensions: Extensions
+            message_length: MessageLen
+            handshake_length: HandshakeLen
+            handshake_version: HandshakeVersion
+      - timestamp:
+          format: UnixMs
+          source: Timestamp
+      - labels:
+          src_ip:
+          dst_ip:
+          src_port:
+          dst_port:
+          timestamp:
+          fingerprints:
+          server_name:
+          cipher_suites:
+          signature_algorithms:
+          extensions:
+          message_length:
+          handshake_length:
+          handshake_version:
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: netcap_tls_client_hello
+          __path__: /var/log/netcap/TLSClientHello.json
+
+  - job_name: netcap_tls_server_hello
+    pipeline_stages:
+      - json:
+          expressions:
+            src_ip: SrcIP
+            dst_ip: DstIP
+            src_port: SrcPort
+            dst_port: DstPort
+            fingerprints: Ja3s
+            src_mac: SrcMAC
+            dst_mac: DstMAC
+            extensions: Extensions
+            cipher_suite: CipherSuite
+      - timestamp:
+          format: UnixMs
+          source: Timestamp
+      - labels:
+          src_ip:
+          dst_ip:
+          src_port:
+          dst_port:
+          timestamp:
+          fingerprints:
+          src_mac:
+          dst_mac:
+          extensions:
+          cipher_suite:
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: netcap_tls_server_hello
+          __path__: /var/log/netcap/TLSServerHello.json
+
+  - job_name: netcap_dns
+    pipeline_stages:
+      - json:
+          expressions:
+            questions: Questions
+            src_ip: SrcIP
+            dst_ip: DstIP
+            src_port: SrcPort
+            dst_port: DstPort
+      - json:
+          expressions:
+            name: Name
+          source: questions
+      - timestamp:
+          format: UnixMs
+          source: Timestamp
+      - labels:
+          timestamp:
+          src_ip:
+          dst_ip:
+          src_port:
+          dst_port:
+          name:
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: netcap_dns
+          __path__: /var/log/netcap/DNS.json
+
+#  - job_name: netcap_ethernet
+#    pipeline_stages:
+#      - json:
+#          expressions:
+#            src_mac: SrcMAC
+#            dst_mac: DstMAC
+#            ether_type: EthernetType
+#            payload_size: PayloadSize
+#      - timestamp:
+#          format: UnixMs
+#          source: Timestamp
+#      - labels:
+#          timestamp:
+#          src_mac:
+#          dst_mac:
+#          ether_type:
+#          payload_size:
+#    static_configs:
+#      - targets:
+#          - localhost
+#        labels:
+#          job: netcap_ethernet
+#          __path__: /var/log/netcap/Ethernet.json
+
+  - job_name: netcap_connection
+    pipeline_stages:
+      - json:
+          expressions:
+            time_end: TimestampLast
+            link_protocol: LinkProto
+            network_protocol: NetworkProto
+            transport_protocol: TransportProto
+            application_protocol: ApplicationProto
+            src_mac: SrcMAC
+            dst_mac: DstMAC
+            src_ip: SrcIP
+            dst_ip: DstIP
+            src_port: SrcPort
+            dst_port: DstPort
+            packets: NumPackets
+            total_size: TotalSize
+      - timestamp:
+          format: UnixMs
+          source: TimestampFirst
+      - labels:
+          timestamp:
+          time_end:
+          link_protocol:
+          network_protocol:
+          transport_protocol:
+          application_protocol:
+          src_mac:
+          dst_mac:
+          src_ip:
+          dst_ip:
+          src_port:
+          dst_port:
+          packets:
+          total_size:
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: netcap_connection
+          __path__: /var/log/netcap/Connection.json
+
+  - job_name: checkip
+    pipeline_stages:
+      - json:
+          expressions:
+            report_db: report_db
+            ip_addr: ip_addr
+            latitude: latitude
+            longitude: longitude
+            urls: urls
+            first_reported: first_seen
+            last_reported: last_seen
+            ip_status: ip_status
+      - timestamp:
+          source: query_date
+          format: "2020-11-05T01:40:27.942496"
+      - labels:
+          timestamp:
+          report_db:
+          ip_addr:
+          latitude:
+          longitude:
+          first_reported:
+          last_reported:
+          ip_status:
+
+      - metrics:
+          ip_status:
+            type: Histogram
+            description: "Suspect IPs"
+            source: ip_status
+            config:
+              value: potentially_malicious
+              action: inc
+      - metrics:
+          ip_status:
+            type: Histogram
+            description: "Good IPs"
+            source: ip_status
+            config:
+              value: likely_benign
+              action: inc
+      - metrics:
+          ip_status:
+            type: Counter
+            description: "Unknown IPs"
+            source: ip_status
+            config:
+              value: potentially_malicious_but_offline
+              action: inc
+              
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: checkip
+          __path__: /var/log/checkip/output.json
+
+  - job_name: pmercury_tls
+    pipeline_stages:
+      - json:
+          expressions:
+            src_ip: src_ip
+            dst_ip: dst_ip
+            src_port: src_port
+            dst_port: dst_port
+            fingerprints:
+            tls:
+      - timestamp:
+          source: event_start
+          format: "1604540427.5977054"
+      - json:
+          expressions:
+            tls_fp: tls
+          source: fingerprints
+      - json:
+          expressions:
+            server_name:
+          source: tls
+      - labels:
+          timestamp:
+          src_ip:
+          dst_ip:
+          src_port:
+          dst_port:
+          tls_fp:
+          server_name:
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: pmercury_tls
+          __path__: /var/log/pmercury/tls_pmercury.json
+
+  - job_name: pmercury_tls_server
+    pipeline_stages:      
+      - json:
+          expressions:
+            src_ip: src_ip
+            dst_ip: dst_ip
+            src_port: src_port
+            dst_port: dst_port
+            fingerprints:
+      - timestamp:
+          source: event_start
+          format: "1604540427.5977054"
+      - json:
+          expressions:
+            tls_server_fp: tls_server
+          source: fingerprints
+      - labels:
+          timestamp:
+          src_ip:
+          dst_ip:
+          src_port:
+          dst_port:
+          tls_server_fp:
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: pmercury_tls_server
+          __path__: /var/log/pmercury/tls_server_pmercury.json
