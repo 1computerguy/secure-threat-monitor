@@ -83,7 +83,7 @@ def ip(otx, ip, mmdb, query_time):
     except Exception as e:
         logger.exception(" :  You received this error with the OTX API Data... {}".format(e))
 
-    # Set alerts from variables
+    # Build alerts dictionary from variables
     alerts = {'report_db': report_db, 'ip_addr': ip, 'latitude': latitude, 'longitude': longitude,
               'urls': top_five_urls, 'first_reported': first_reported, 'last_reported': last_reported,
               'query_date': query_time, 'url_status': url_status}
@@ -160,11 +160,15 @@ def hostname(host, mmdb, query_url, query_time):
     except Exception as e:
         logger.exception(" :  Unable to connect to URLHaus API. Recieved the following error {}".format(e))
 
-    # Set alerts from variables
+    # Build alerts dictionary from variables
     alerts = {'report_db': report_db, 'ip_addr': ip_addr, 'latitude': latitude, 'longitude': longitude,
               'urls': full_url_list, 'first_reported': first_reported, 'last_reported': last_reported,
               'query_date': query_time, 'url_status': url_status}
     return alerts
+
+def sslbl():
+    '''Check IP against SSL Blocklist against sslbl.abuse.ch
+    '''
 
 def main():
     '''Run some automated tests for ip and hostname methods
