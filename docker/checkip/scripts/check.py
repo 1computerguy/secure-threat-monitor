@@ -7,7 +7,7 @@ import json
 import logging
 
 from OTXv2 import OTXv2
-from check_ip import ip, hostname
+from check_ip import ip, hostname, allow_list
 from taillog import follow
 from datetime import datetime
 from dateutil.parser import parse
@@ -70,6 +70,7 @@ def main():
     parser.add_argument('-o', '--outfile', action='store', dest='outfile', help='File to write output date to.', default="/checkip/output/output.json", required=False)
     parser.add_argument('-d', '--db', action='store', dest='mmdb', help='Location of MaxMind City DB', default="/checkip/resources/GeoLite2-City.mmdb", required=False)
     parser.add_argument('-a', '--api', action='store', dest='api_key', help='API Key obtained from Alienvault OTX website', required=False)
+    parser.add_argument('-w', '--allow', action='store', dest='allowed', help='Location of the domain-whitelist.csv file', default='/checkip/resources/domain-whitelist.csv', required=False)
 
     # Set logging before beginning
     handler = logging.StreamHandler()

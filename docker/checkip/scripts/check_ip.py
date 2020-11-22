@@ -166,6 +166,14 @@ def hostname(host, mmdb, query_url, query_time):
               'query_date': query_time, 'url_status': url_status}
     return alerts
 
+def allow_list():
+    '''Check for existence of domain in the top 1 million domains list and don't lookup
+    the value if it is. This will miss the instances where a bad actor uses Google, Twitter,
+    Dropbox, etc. for C2, but it significantly reduces network overhead and processing overhead
+    from continual lookups of "known good" URLs. These URLs will still be analyzed by the
+    tls-mal-detect.py file, so it is not a total loss.
+    '''
+
 def sslbl():
     '''Check IP against SSL Blocklist against sslbl.abuse.ch
     '''
