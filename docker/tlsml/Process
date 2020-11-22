@@ -1,0 +1,12 @@
+1) Ingest data from DB's or log files (still TBD)
+2) FOR INITIAL TRAINING (if required):
+    a) Split into test/train dataset
+    b) Normalize (see below)
+    b) Perform initial training
+3) Normalize data (MinMaxScaler has been proven effective here)
+4) Send normalized data to learning algorithm (or first stage - still TBD)
+    If multi-stage (like self-taught learning framework)
+    a) Send to first state - autoencoder or other multidimensional in and multidimensional out
+    b) Send output to stage 2
+    c) Determine available outputs
+    d) Forward (or make API for) available outputs
