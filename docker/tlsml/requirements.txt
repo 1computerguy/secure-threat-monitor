@@ -1,3 +1,5 @@
 sklearn
-numpy
-pandas
+numpy==1.18.1
+pandas==0.25.3
+tranco==2.21.0
+dgaintel==2.3
