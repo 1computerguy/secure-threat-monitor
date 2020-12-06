@@ -14,6 +14,7 @@ from datetime import datetime
 from dateutil.parser import parse
 from OTXv2 import OTXv2
 
+# Define logger for cross appliction logging consistency
 logger = logging.getLogger(__name__)
 
 def getValue(results, keys):

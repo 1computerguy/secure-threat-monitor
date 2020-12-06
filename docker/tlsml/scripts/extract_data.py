@@ -2,16 +2,32 @@
 
 import json
 import csv
+import logging
 
 from dgaintel import get_prob
-from Tranco import tranco
+from tranco import Tranco
 from datetime import date, datetime, timedelta
 
-csv_keys = ['dom_in_tranco_1m', 'dom_dga_prob', 'ans_count', 'tls_record_type', 'client_tls_ver',
+# Define logger for cross appliction logging consistency
+logger = logging.getLogger(__name__)
+
+# Create custom logging class for exceptions
+class OneLineExceptionFormatter(logging.Formatter):
+    def formatException(self, exc_info):
+        result = super().formatException(exc_info)
+        return repr(result)
+ 
+    def format(self, record):
+        result = super().format(record)
+        if record.exc_text:
+            result = result.replace("\n", "")
+        return result
+
+csv_keys = ['dom_in_tranco_1m', 'dom_dga_prob', 'tls_record_type', 'client_tls_ver',
             'svr_tls_ver', 'message_len', 'handshake_type', 'handshake_version', 'handshake_len',
-            'cs_len', 'ext_len', 'sni_in_tranco_1m', 'sni_dga_prob', 'src_port', 'dst_port', 'cs_0000',
-            'cs_0001', 'cs_0002', 'cs_0003', 'cs_0004', 'cs_0005', 'cs_0006', 'cs_0007', 'cs_0008',
-            'cs_0009', 'cs_000a', 'cs_000b', 'cs_000c', 'cs_000d', 'cs_000e', 'cs_000f', 'cs_0010',
+            'cs_len', 'ext_len', 'src_port', 'dst_port', 'cs_0000', 'cs_0001', 'cs_0002', 
+            'cs_0003', 'cs_0004', 'cs_0005', 'cs_0006', 'cs_0007', 'cs_0008','cs_0009',
+            'cs_000a', 'cs_000b', 'cs_000c', 'cs_000d', 'cs_000e', 'cs_000f', 'cs_0010',
             'cs_0011', 'cs_0012','cs_0013', 'cs_0014', 'cs_0015', 'cs_0016', 'cs_0017', 'cs_0018',
             'cs_0019', 'cs_001a', 'cs_001b', 'cs_001e', 'cs_001f', 'cs_0020', 'cs_0021', 'cs_0022',
             'cs_0023', 'cs_0024', 'cs_0025', 'cs_0026', 'cs_0027', 'cs_0028', 'cs_0029',
@@ -92,9 +108,13 @@ def date_range(start_date, end_date):
     '''
     Return a list of the dates from start to end date
     '''
-    dates = []
-    for day in range (int ((end_date - start_date).days) + 1):
-        dates.append(start_date + timedelta(day))
+    try:
+        dates = []
+        for day in range (int ((end_date - start_date).days) + 1):
+            dates.append(start_date + timedelta(day))
+    except Exception as e:
+        logging.exception("There was a problem generating dates... {}".format(e))
+        exit(1)
     
     return dates
 
@@ -105,23 +125,27 @@ def dns_tranco_check(domain_name, number_of_days):
     # Set variables
     tranco_result = float()
     begin_date = date.today() - timedelta(number_of_days)
-    end_date = date.today()
+    end_date = date.today() - timedelta(1)
     date_check_range = date_range(begin_date, end_date)
     tranco_data = Tranco(cache=True, cache_dir='.tranco')
     occurence_count = 0
 
     # Iterate over date range and increase count for each occurence of the domain
-    for single_date in date_check_range:
-        tranco_1M = set(tranco_data.list(single_day.strftime("%Y-%m-%d")).top(1000000))
-        if domain_name in tranco_1M:
-            occurence_count += 1
-    
+    try:
+        for single_day in date_check_range:
+            tranco_1M = set(tranco_data.list(single_day.strftime("%Y-%m-%d")).top(1000000))
+            if domain_name in tranco_1M:
+                occurence_count += 1
+    except Exception as e:
+        logging.exception("There was a problem in Tranco analysis... {}".format(e))
+        exit(1)
+  
     # Convert occurence value to float for ML analysis
     tranco_result = occurence_count / number_of_days
-    
+
     return tranco_result
 
-def correlate_data(dict_keys, tls_client_entry, tls_server_entry, dns_entry):
+def correlate_data(dict_keys, tls_client_entry, tls_server_entry):
     '''
     Reads in data from netcap TLS and DNS files and returns dictionary to insert into CSV file
     '''
@@ -132,10 +156,12 @@ def correlate_data(dict_keys, tls_client_entry, tls_server_entry, dns_entry):
 
     # Set DNS data fields in test_train_data dict
     # Tranco 1M score
-    test_train_data['dom_in_tranco_1m'] = dns_tranco_check(dns_entry['name'], 30)
-    # DGA probability score
-    test_train_data['dom_dga_prob'] = get_prob(dns_entry['name'])
-    test_train_data['ans_count'] = dns_entry['count']
+    test_train_data['dom_in_tranco_1m'] = dns_tranco_check(tls_client_entry['SNI'], 30)
+    try:
+        test_train_data['dom_dga_prob'] = get_prob(tls_client_entry['SNI'])
+    except Exception as e:
+        logging.exception("There was a problem with DGA analysis... {}".format(e))
+        exit(1)
 
     # Set TLS Client static data fields in test_train_data dict
     test_train_data['tls_record_type'] = tls_client_entry['Type']
@@ -146,8 +172,6 @@ def correlate_data(dict_keys, tls_client_entry, tls_server_entry, dns_entry):
     test_train_data['handshake_len'] = tls_client_entry['HandshakeLen']
     test_train_data['cs_len'] = tls_client_entry['CipherSuiteLen']
     test_train_data['ext_len'] = tls_client_entry['ExtensionLen']
-    test_train_data['sni_in_tranco_1m'] = dns_tranco_check_(tls_client_entry['SNI'])
-    test_train_data['sni_dga_prob'] = get_prob(tls_client_entry['SNI'])
     test_train_data['src_port'] = tls_client_entry['SrcPort']
     test_train_data['dst_port'] = tls_client_entry['DstPort']
 
@@ -196,64 +220,58 @@ def correlate_data(dict_keys, tls_client_entry, tls_server_entry, dns_entry):
     return test_train_data
 
 def main(csv_header):
-    base_log_dir = "/var/log/netcap/"
+    base_log_dir = "/var/log/netcap"
 
-    tls_client_file = "{}TLSClientHello.json".format(base_log_dir)
-    tls_server_file = "{}TLSServerHello.json".format(base_log_dir)
-    dns_file = "{}DNS.json".format(base_log_dir)
+    tls_client_file = "{}/TLSClientHello.json".format(base_log_dir)
+    tls_server_file = "{}/TLSServerHello.json".format(base_log_dir)
 
-    tls_client_data_list = []
-    tls_server_data_list = []
-    tls_server_data = {}
-    dns_data_list = []
-    client_time = ''
-    dns_time = ''
+    tls_client_list = []
+    tls_server_list = []
 
-    with open(tls_client_file, 'r', newline='') as tls_client_data:
-        for line in tls_client_data:
-            tls_client_data_list.append(line)
+    try:
+        with open(tls_client_file, 'r', newline='') as tls_client_data:
+            for line in tls_client_data:
+                tls_client_list.append(line)
 
-    with open(tls_server_file, 'r', newline='') as tls_server_data:
-        for line in tls_server_data:
-            tls_server_data_list.append(line)
+        tls_client_list.pop(0)
+    except Exception as e:
+        logging.exception("There was a problem in the TLS Client file... {}".format(e))
+        exit(1)
 
-    with open(dns_file, 'r', newline='') as dns_data:
-        for line in dns_data:
-            dns_data_list.append(line)
+    try:
+        with open(tls_server_file, 'r', newline='') as tls_server_data:
+            for line in tls_server_data:
+                tls_server_list.append(line)
 
-    tls_client_data_list.pop(0)
-    tls_server_data_list.pop(0)
-    dns_data_list.pop(0)
+        tls_server_list.pop(0)
+    except Exception as e:
+        logging.exception("There was a problem in the TLS Server file... {}".format(e))
+        exit(1)
 
-    with open("test_train_data.csv", "w", newline='') as outfile:
-        write_csv = csv.DictWriter(outfile, fieldnames=csv_header)
+    try:
+        with open("test_train_data.csv", "w", newline='') as outfile:
+            write_csv = csv.DictWriter(outfile, fieldnames=csv_header)
 
-        write_csv.writeheader()
+            write_csv.writeheader()
 
-        for tls_client_entry in tls_client_data_list:
-            tls_server_data_vals = {}
-            dns_data = {}
-            json_client_entry = json.loads(tls_client_entry)
-            client_time = json_client_entry['Timestamp']
+            for tls_client_entry in tls_client_list:
+                tls_server_data_vals = {}
+                json_client_entry = json.loads(tls_client_entry)
 
-            for tls_server_entry in tls_server_data_list:
-                json_server_entry = json.loads(tls_server_entry)
-                if json_server_entry['SrcIP'] == json_client_entry['DstIP'] and json_server_entry['DstPort'] == json_client_entry['SrcPort']:
-                    tls_server_data_vals = json_server_entry
-            
-            print(list(filter(lambda dns_data: client_time[:len(client_time) - 2] == dns_time[:len(dns_time) - 2] and json_client_entry['SrcIP'] == json_dns_entry['DstIP'] and json_dns_entry['Questions'][0]['Type'] == 1, json.loads(dns_entry))))
+                for tls_server_entry in tls_server_list:
+                    json_server_entry = json.loads(tls_server_entry)
+                    if json_server_entry['SrcIP'] == json_client_entry['DstIP'] and json_server_entry['DstPort'] == json_client_entry['SrcPort']:
+                        tls_server_data_vals = json_server_entry
+                        break
 
-            for dns_entry in dns_data_list:
-                json_dns_entry = json.loads(dns_entry)
-                dns_time = json_dns_entry['Timestamp']
-
-                if client_time[:len(client_time) - 2] == dns_time[:len(dns_time) - 2] and json_client_entry['SrcIP'] == json_dns_entry['DstIP'>                    dns_data['name'] = json_dns_entry['Questions'][0]['Name']
-                    dns_data['count'] = json_dns_entry['ANCount']
-                else:
-                    dns_data['name'] = 0
-                    dns_data['count'] = 0
-
-            write_csv.writerow(correlate_data(csv_header, json_client_entry, tls_server_data_vals, dns_data))
+                write_csv.writerow(correlate_data(csv_header, json_client_entry, tls_server_data_vals))
+    except Exception as e:
+        logging.exception("There was a problem opening in the CSV file write process... {}".format(e))
+        exit(1)
 
 if __name__ == '__main__':
-    main(csv_keys)
+    try:
+        exit(main(csv_keys))
+    except Exception:
+        logging.exception("Exception in main()")
+        exit(1)
