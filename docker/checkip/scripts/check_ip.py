@@ -18,7 +18,8 @@ from OTXv2 import OTXv2
 logger = logging.getLogger(__name__)
 
 def getValue(results, keys):
-    '''Get a nested key from a dict, without having to do loads of ifs
+    '''
+    Get a nested key from a dict, without having to do loads of ifs
     '''
     if type(keys) is list and len(keys) > 0:
 
@@ -37,7 +38,8 @@ def getValue(results, keys):
         return results
 
 def ip(otx, ip, mmdb, query_time):
-    '''Query AlienVault OTX for malicious IP checking
+    '''
+    Query AlienVault OTX for malicious IP checking
     '''
     alerts = {}
     report_db = ''
@@ -92,7 +94,8 @@ def ip(otx, ip, mmdb, query_time):
     return alerts
 
 def hostname(host, mmdb, query_url, query_time):
-    '''Query urlhaus.abuse.ch for malicious host checking
+    '''
+    Query urlhaus.abuse.ch for malicious host checking
     '''
     alerts = {}
     ip_addr = ''
@@ -168,7 +171,8 @@ def hostname(host, mmdb, query_url, query_time):
     return alerts
 
 def allow_list():
-    '''Check for existence of domain in the top 1 million domains list and don't lookup
+    '''
+    Check for existence of domain in the top 1 million domains list and don't lookup
     the value if it is. This will miss the instances where a bad actor uses Google, Twitter,
     Dropbox, etc. for C2, but it significantly reduces network overhead and processing overhead
     from continual lookups of "known good" URLs. These URLs will still be analyzed by the
@@ -176,11 +180,13 @@ def allow_list():
     '''
 
 def sslbl():
-    '''Check IP against SSL Blocklist against sslbl.abuse.ch
+    '''
+    Check IP against SSL Blocklist using sslbl.abuse.ch
     '''
 
 def main():
-    '''Run some automated tests for ip and hostname methods
+    '''
+    Run some automated tests for ip and hostname methods
     '''
     api_key = os.environ.get('API_KEY')
     otx_server = 'https://otx.alienvault.com/'
