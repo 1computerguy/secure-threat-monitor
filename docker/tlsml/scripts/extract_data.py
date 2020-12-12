@@ -3,27 +3,24 @@
 import json
 import csv
 import logging
+import os
 
 from dgaintel import get_prob
 from tranco import Tranco
 from datetime import date, datetime, timedelta
+from check_ip import ip, hostname, ja3_sslbl_check
+#from queue import Queue
+#from threading import Thread
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 
 # Define logger for cross appliction logging consistency
 logger = logging.getLogger(__name__)
 
-# Create custom logging class for exceptions
-class OneLineExceptionFormatter(logging.Formatter):
-    def formatException(self, exc_info):
-        result = super().formatException(exc_info)
-        return repr(result)
- 
-    def format(self, record):
-        result = super().format(record)
-        if record.exc_text:
-            result = result.replace("\n", "")
-        return result
-
-csv_keys = ['dom_in_tranco_1m', 'dom_dga_prob', 'tls_record_type', 'client_tls_ver',
+ip_domain_dict = {}
+ip_domain_dict_length = 0
+csv_header = ['dom_in_tranco_1m', 'dom_dga_prob', 'otx_status', 'otx_age', 'urlhaus_status',
+            'urlhaus_age', 'ja3_urlhaus_status', 'ja3_urlhaus_age', 'tls_record_type', 'client_tls_ver',
             'svr_tls_ver', 'message_len', 'handshake_type', 'handshake_version', 'handshake_len',
             'cs_len', 'ext_len', 'src_port', 'dst_port', 'cs_0000', 'cs_0001', 'cs_0002', 
             'cs_0003', 'cs_0004', 'cs_0005', 'cs_0006', 'cs_0007', 'cs_0008','cs_0009',
@@ -82,7 +79,7 @@ csv_keys = ['dom_in_tranco_1m', 'dom_dga_prob', 'tls_record_type', 'client_tls_v
             'ext_29', 'ext_30', 'ext_31', 'ext_32', 'ext_33', 'ext_34', 'ext_35', 'ext_36',
             'ext_37', 'ext_38', 'ext_39', 'ext_41', 'ext_42', 'ext_43', 'ext_44', 'ext_45',
             'ext_47', 'ext_48', 'ext_49', 'ext_50', 'ext_51', 'ext_52', 'ext_53', 'ext_55',
-            'ext_56', 'ext_65281', 'sig_0201', 'sig_0203', 'sig_0401', 'sig_0403', 'sig_0420',
+            'ext_56', 'ext_65281', 'ext_unknown', 'sig_0201', 'sig_0203', 'sig_0401', 'sig_0403', 'sig_0420',
             'sig_0501', 'sig_0503', 'sig_0520', 'sig_0601', 'sig_0603', 'sig_0620', 'sig_0704',
             'sig_0705', 'sig_0706', 'sig_0707', 'sig_0708', 'sig_0709', 'sig_070A', 'sig_070B',
             'sig_070C', 'sig_070D', 'sig_070E', 'sig_070F', 'sig_0804', 'sig_0805', 'sig_0806',
@@ -104,6 +101,35 @@ csv_keys = ['dom_in_tranco_1m', 'dom_dga_prob', 'tls_record_type', 'client_tls_v
             'svr_ext_45', 'svr_ext_46', 'svr_ext_47', 'svr_ext_48', 'svr_ext_49', 'svr_ext_50',
             'svr_ext_51', 'svr_ext_52', 'svr_ext_53', 'svr_ext_55', 'svr_ext_56', 'svr_ext_65281']
 
+# Create custom logging class for exceptions
+class OneLineExceptionFormatter(logging.Formatter):
+    def formatException(self, exc_info):
+        result = super().formatException(exc_info)
+        return repr(result)
+ 
+    def format(self, record):
+        result = super().format(record)
+        if record.exc_text:
+            result = result.replace("\n", "")
+        return result
+'''
+# Add multithreading to application so we don't run into a data
+# overrun on a single process (query can take up to 10+ seconds) 
+class LookupWorker(Thread):
+
+    def __init__(self, queue):
+        Thread.__init__(self)
+        self.queue = queue
+
+    def run(self):
+        while True:
+            # Get the work from the queue and expand the tuple
+            csv_filename, tls_client_entry, tls_server_list = self.queue.get()
+            try:
+                pre_format_data(csv_filename, tls_client_entry, tls_server_list)
+            finally:
+                self.queue.task_done()
+'''
 def date_range(start_date, end_date):
     '''
     Return a list of the dates from start to end date
@@ -123,11 +149,13 @@ def dns_tranco_check(domain_name, number_of_days):
     Analyze DNS domains for Tranco 1 million over the last 30 days and return percentage existence 
     '''
     # Set variables
+    store_base = r'C:\Users\bryan\Desktop'
+    tranco_base = r'{}\.tranco'.format(store_base)
     tranco_result = float()
     begin_date = date.today() - timedelta(number_of_days)
     end_date = date.today() - timedelta(1)
     date_check_range = date_range(begin_date, end_date)
-    tranco_data = Tranco(cache=True, cache_dir='.tranco')
+    tranco_data = Tranco(cache=True, cache_dir=tranco_base)
     occurence_count = 0
 
     # Iterate over date range and increase count for each occurence of the domain
@@ -145,23 +173,29 @@ def dns_tranco_check(domain_name, number_of_days):
 
     return tranco_result
 
-def correlate_data(dict_keys, tls_client_entry, tls_server_entry):
+def correlate_data(data_dict, tls_client_entry, tls_server_entry, osint_data):
     '''
     Reads in data from netcap TLS and DNS files and returns dictionary to insert into CSV file
     '''
-    test_train_data = {}
-
-    for val in dict_keys:
-        test_train_data[val] = 0
+    test_train_data = data_dict
 
     # Set DNS data fields in test_train_data dict
     # Tranco 1M score
-    test_train_data['dom_in_tranco_1m'] = dns_tranco_check(tls_client_entry['SNI'], 30)
+    test_train_data['dom_in_tranco_1m'] = dns_tranco_check(tls_client_entry['SNI'], 15)
     try:
         test_train_data['dom_dga_prob'] = get_prob(tls_client_entry['SNI'])
     except Exception as e:
         logging.exception("There was a problem with DGA analysis... {}".format(e))
         exit(1)
+
+    # OSINT OTX and urlhaus analysis
+    ja3_data = ja3_sslbl_check(tls_client_entry['Ja3'])
+    test_train_data['otx_status'] = osint_data[0]['url_status']
+    test_train_data['otx_age'] = osint_data[0]['report_age']
+    test_train_data['urlhaus_status'] = osint_data[1]['url_status']
+    test_train_data['urlhaus_age'] = osint_data[1]['report_age']
+    test_train_data['ja3_urlhaus_status'] = ja3_data['ja3_check']
+    test_train_data['ja3_urlhaus_age'] = ja3_data['ja3_record_age']
 
     # Set TLS Client static data fields in test_train_data dict
     test_train_data['tls_record_type'] = tls_client_entry['Type']
@@ -193,7 +227,11 @@ def correlate_data(dict_keys, tls_client_entry, tls_server_entry):
 
     for ext_val in tls_client_entry['Extensions']:
         ext_entry = "ext_{:02}".format(ext_val)
-        test_train_data[ext_entry] = 1
+
+        if ext_entry in test_train_data:
+            test_train_data[ext_entry] = 1
+        else:
+            test_train_data['ext_unknown'] += 1
 
     sig_reserved_count = 1
     for sig_data in tls_client_entry['SignatureAlgs']:
@@ -219,14 +257,68 @@ def correlate_data(dict_keys, tls_client_entry, tls_server_entry):
 
     return test_train_data
 
-def main(csv_header):
-    base_log_dir = "/var/log/netcap"
+def write_csv_file(filename, data):
+    '''
+    Write data to csv
+    '''
+    try:
+        with open(filename, "a", newline='') as outfile:
+            write_csv = csv.DictWriter(outfile, fieldnames=csv_header)
+            write_csv.writerow(data)
+    except Exception as e:
+        logging.exception("There was a problem in the CSV file write process... {}".format(e))
+        exit(1)
 
-    tls_client_file = "{}/TLSClientHello.json".format(base_log_dir)
-    tls_server_file = "{}/TLSServerHello.json".format(base_log_dir)
+def pre_format_data(csv_filename, tls_server_list, tls_client_entry):
+    test_train_data_dict = {}
+    global ip_domain_dict
+    #global ip_domain_dict_length
+    #API_KEY = os.environ.get('API_KEY')
+    API_KEY = '0f6b86cdae8180b3a9b26e32dc3224acc7f00e887d8d542de837599df8c7bc6f'
 
+    # Pre-generate test_train_data_dict with 0 values
+    for val in csv_header:
+        test_train_data_dict[val] = 0
+
+    tls_server_data_vals = {}
+    json_client_entry = json.loads(tls_client_entry)
+    tls_osint_list = []
+
+    for tls_server_entry in tls_server_list:
+        json_server_entry = json.loads(tls_server_entry)
+        if json_server_entry['SrcIP'] == json_client_entry['DstIP'] and json_server_entry['DstIP'] == json_client_entry['SrcIP'] and json_server_entry['DstPort'] == json_client_entry['SrcPort'] and json_server_entry['SrcPort'] == json_client_entry['DstPort']:
+            tls_server_data_vals = json_server_entry
+            tls_server_list.remove(tls_server_entry)
+            break
+
+    ip_domain_value = json_client_entry['DstIP'] + ':' + json_client_entry['SNI']
+
+    # Check to see if key is in the ip_domain_dict (meaning it is an existing entry)
+    # If it is, then skip check_ip, otherwise, we'll run it and add the values to the dict
+    if ip_domain_value in ip_domain_dict.keys():
+        tls_osint_list.append(ip_domain_dict[ip_domain_value][0])
+        tls_osint_list.append(ip_domain_dict[ip_domain_value][1])
+    else:
+        dst_ip = json_client_entry['DstIP']
+        sni = json_client_entry['SNI']
+        tls_osint_list.append(ip(API_KEY, dst_ip))
+        tls_osint_list.append(hostname(sni, dst_ip))
+        ip_domain_dict[ip_domain_value] = tls_osint_list
+        #ip_domain_dict_length += 1
+
+    data_to_write = correlate_data(test_train_data_dict, json_client_entry, tls_server_data_vals, tls_osint_list)
+    write_csv_file(csv_filename, data_to_write)
+
+def main():
+    store_base = r'C:\Users\bryan\Desktop'
+    csv_filename = r'{}\test_train_data.csv'.format(store_base)
+    base_log_dir = os.getcwd()
+    tls_client_file = os.path.join(base_log_dir, 'TLSClientHello.json')
+    tls_server_file = os.path.join(base_log_dir, 'TLSServerHello.json')
     tls_client_list = []
     tls_server_list = []
+    global ip_domain_dict
+    #global ip_domain_dict_length
 
     try:
         with open(tls_client_file, 'r', newline='') as tls_client_data:
@@ -248,30 +340,33 @@ def main(csv_header):
         logging.exception("There was a problem in the TLS Server file... {}".format(e))
         exit(1)
 
-    try:
-        with open("test_train_data.csv", "w", newline='') as outfile:
-            write_csv = csv.DictWriter(outfile, fieldnames=csv_header)
+    if not os.path.exists(csv_filename):
+        try:
+            with open(csv_filename, "x", newline='') as outfile:
+                write_csv = csv.DictWriter(outfile, fieldnames=csv_header)
+                write_csv.writeheader()
+        except Exception as e:
+            logging.exception("There was a problem in the CSV file write process... {}".format(e))
+            exit(1)
 
-            write_csv.writeheader()
+    with ProcessPoolExecutor() as executor:
+        #for tls_client_entry in tls_client_list:
+            #queue.put((csv_filename, tls_client_entry, tls_server_list))
+            fn = partial(pre_format_data, csv_filename, tls_server_list)
+            executor.map(fn, tls_client_list, timeout=86400)
 
-            for tls_client_entry in tls_client_list:
-                tls_server_data_vals = {}
-                json_client_entry = json.loads(tls_client_entry)
+            # To conserve memory over time, we will reset the ip_domain_dict when it either reaches 10000 unique
+            # entries, or when it reaches 12am UTC. I may make this user controlled at some point, but for now
+            # it will remain hard coded.
+            #current_datetime = datetime.utcnow().strftime('%H:%M:%S')
+            #if ip_domain_dict_length > 10000 or  current_datetime == '00:00:00':
+            #    ip_domain_dict = {}
+            #    ip_domain_dict_length = 0
 
-                for tls_server_entry in tls_server_list:
-                    json_server_entry = json.loads(tls_server_entry)
-                    if json_server_entry['SrcIP'] == json_client_entry['DstIP'] and json_server_entry['DstPort'] == json_client_entry['SrcPort']:
-                        tls_server_data_vals = json_server_entry
-                        break
-
-                write_csv.writerow(correlate_data(csv_header, json_client_entry, tls_server_data_vals))
-    except Exception as e:
-        logging.exception("There was a problem opening in the CSV file write process... {}".format(e))
-        exit(1)
 
 if __name__ == '__main__':
     try:
-        exit(main(csv_keys))
+        exit(main())
     except Exception:
         logging.exception("Exception in main()")
         exit(1)

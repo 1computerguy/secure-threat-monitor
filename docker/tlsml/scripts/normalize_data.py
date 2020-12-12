@@ -1,21 +1,33 @@
 #!/usr/bin/env python3
 
 from pandas import read_csv
-from pandas import DataFrame
 from sklearn.preprocessing import MinMaxScaler
-from pandas.plotting import scatter_matrix
-from matplotlib import pyplot
+import tensorflow as tf
+from tensorflow.keras import layers
+from tensorflow.keras import regularizers
 
+scaler = MinMaxScaler()
 csv_file = "test_train_data.csv"
-dataset = read_csv(csv_file, header=1)
+dataset = read_csv(csv_file)
+normalized_data = scaler.fit_transform(dataset)
 
-data = dataset.values[:, :-1]
-transform_data = MinMaxScaler()
-data = transform_data.fit_transform(data)
+ae_input_features = len(dataset.columns)
+round_one_hidden_units = 100
+round_two_hidden_units = 75
+round_three_hidden_units = 50
+final_round_output_units = 25
 
-dataset = DataFrame(data)
+ae_output_features = ae_input_features
+ae_learning_rate = 0.01
 
-print(dataset.describe())
+ae_inputs = tf.keras.Input(shape=(ae_input_features,))
+ae_encoded = layers.Dense(round_one_hidden_units, activation='relu',
+                    activity_regularizer=regularizers.l1(10e-5))(ae_inputs)
+ae_encoded = layers.Dense(round_two_hidden_units, activation='relu',
+                    activity_regularizer=regularizers.l1(10e-5))(ae_encoded)
+ae_encoded = layers.Dense(round_three_hidden_units, activation='relu',
+                    activity_regularizer=regularizers.l1(10e-5))(ae_encoded)
+ae_encoded = layers.Dense(final_round_output_units, activation='relu',
+                    activity_regularizer=regularizers.l1(10e-5))(ae_encoded)
 
-dataset.hist()
-pyplot.show()
+autoencoder = tf.keras.Model(ae_inputs)

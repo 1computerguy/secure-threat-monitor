@@ -30,3 +30,5 @@ __pycache__/
 *.mmdb
 
 NetCap-data-format.json
+TLSClientHello.json
+TLSServerHello.json
