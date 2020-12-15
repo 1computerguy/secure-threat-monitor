@@ -275,14 +275,13 @@ def pre_format_data(csv_filename, tls_server_list, tls_client_entry):
     #global ip_domain_dict_length
     #API_KEY = os.environ.get('API_KEY')
     API_KEY = '0f6b86cdae8180b3a9b26e32dc3224acc7f00e887d8d542de837599df8c7bc6f'
-
-    # Pre-generate test_train_data_dict with 0 values
-    for val in csv_header:
-        test_train_data_dict[val] = 0
-
     tls_server_data_vals = {}
     json_client_entry = json.loads(tls_client_entry)
     tls_osint_list = []
+    
+    # Pre-generate test_train_data_dict with 0 values
+    for val in csv_header:
+        test_train_data_dict[val] = 0
 
     for tls_server_entry in tls_server_list:
         json_server_entry = json.loads(tls_server_entry)

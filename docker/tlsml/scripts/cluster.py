@@ -7,13 +7,13 @@ from sklearn.cluster import AgglomerativeClustering
 from scipy.cluster.hierarchy import dendrogram, linkage
 
 #scaler = MinMaxScaler()
-csv_file = "test_train_data.csv.old3"
+csv_file = "test_train_data-pre.csv"
 dataset = pd.read_csv(csv_file)
 #normalized_data = scaler.fit_transform(dataset)
 
 X = dataset.iloc[:, :].values
-dendro = linkage(X, method='ward')
+link = linkage(X.sample( n = 100 ), method='ward')
 
+#dendrogram(link, leaf_rotation=90, leaf_font_size=8)
 
-
-#cluster = AgglomerativeClustering(n_clusters=)
+cluster = AgglomerativeClustering(n_clusters=6)

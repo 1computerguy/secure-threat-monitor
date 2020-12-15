@@ -10,9 +10,10 @@ import time
 import logging
 import csv
 
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from dateutil.parser import parse
 from OTXv2 import OTXv2
+from tranco import Tranco
 
 # Define logger for cross appliction logging consistency
 logger = logging.getLogger(__name__)
@@ -37,6 +38,20 @@ def getValue(results, keys):
     else:
         return results
 
+def date_range(start_date, end_date):
+    '''
+    Return a list of the dates from start to end date
+    '''
+    try:
+        dates = []
+        for day in range (int ((end_date - start_date).days) + 1):
+            dates.append(start_date + timedelta(day))
+    except Exception as e:
+        logging.exception("There was a problem generating dates... {}".format(e))
+        exit(1)
+    
+    return dates
+
 def ip(api_key, ip):
     '''
     Query AlienVault OTX for malicious IP checking
@@ -55,10 +70,13 @@ def ip(api_key, ip):
         pulses = getValue(result['general'], ['pulse_info', 'pulses'])
         if pulses:
             full_url_list = getValue(result['passive_dns'], ['passive_dns'])
-            first_reported = datetime.strptime(full_url_list[-1]['first'], "%Y-%m-%dT%H:%M:%S+00:00")
-            last_reported = datetime.strptime(full_url_list[0]['last'], "%Y-%m-%dT%H:%M:%S+00:00")
-            report_age = int(((last_reported - first_reported).total_seconds() / 86400))
-            url_status = 2
+            if full_url_list:
+                first_reported = datetime.strptime(full_url_list[-1]['first'], "%Y-%m-%dT%H:%M:%S+00:00")
+                last_reported = datetime.strptime(full_url_list[0]['last'], "%Y-%m-%dT%H:%M:%S+00:00")
+                report_age = int(((last_reported - first_reported).total_seconds() / 86400))
+            else:
+                report_age = 0
+            url_status = 1
 
     except Exception as e:
         logger.exception(" :  You received this error with the OTX API Data... {}".format(e))
@@ -94,15 +112,15 @@ def hostname(host, ip_addr, query_two=False):
 
             else:
                 if not query_urlhaus.json()['urls']:
-                    url_status = 1
+                    url_status = 0.5
                     report_age = 0
                 elif query_urlhaus.json()['urls'][0]['url_status'] == 'online':
                     first_seen = datetime.strptime(query_urlhaus.json()['firstseen'], "%Y-%m-%d %H:%M:%S UTC")
                     last_seen = datetime.now()
                     report_age = int(((last_seen - first_seen).total_seconds() / 86400))
-                    url_status = 2
-                else:
                     url_status = 1
+                else:
+                    url_status = 0.5
                     report_age = 0
 
         else:
@@ -156,6 +174,35 @@ def ja3_sslbl_check(fingerprint):
     ja3_malware_check = {'ja3_check': ja3_check, 'ja3_record_age': report_age}
 
     return ja3_malware_check
+
+def dns_tranco_check(cache_dir, domain_name, number_of_days):
+    '''
+    Analyze DNS domains for Tranco 1 million over the last 30 days and return percentage existence 
+    '''
+    # Set variables
+    tranco_result = float()
+    begin_date = date.today() - timedelta(number_of_days)
+    # Must set time delta to not consider the last 2 days. This prevents errors when the latest
+    # records have not been released during the evaluation timeframe
+    end_date = date.today() - timedelta(2)
+    date_check_range = date_range(begin_date, end_date)
+    tranco_data = Tranco(cache=True, cache_dir=cache_dir)
+    occurence_count = 0
+
+    # Iterate over date range and increase count for each occurence of the domain
+    try:
+        for single_day in date_check_range:
+            tranco_1M = set(tranco_data.list(single_day.strftime("%Y-%m-%d")).top(1000000))
+            if domain_name in tranco_1M:
+                occurence_count += 1
+    except Exception as e:
+        logging.exception("There was a problem in Tranco analysis... {}".format(e))
+        exit(1)
+  
+    # Convert occurence value to float for ML analysis
+    tranco_result = occurence_count / number_of_days
+
+    return tranco_result
 
 def main():
     '''

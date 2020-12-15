@@ -32,3 +32,5 @@ __pycache__/
 NetCap-data-format.json
 TLSClientHello.json
 TLSServerHello.json
+TLSClientHello.csv
+TLSServerHello.csv
