@@ -3,6 +3,7 @@
 import csv
 import logging
 import os
+import argparse
 
 from check_ip import ip, hostname, ja3_sslbl_check, dns_tranco_check
 from dgaintel import get_prob
@@ -81,14 +82,14 @@ csv_header = ['dom_in_tranco_1m', 'dom_dga_prob', 'otx_status', 'otx_age', 'urlh
             'sig_0705', 'sig_0706', 'sig_0707', 'sig_0708', 'sig_0709', 'sig_070A', 'sig_070B',
             'sig_070C', 'sig_070D', 'sig_070E', 'sig_070F', 'sig_0804', 'sig_0805', 'sig_0806',
             'sig_0807', 'sig_0808', 'sig_0809', 'sig_080a', 'sig_080b', 'sig_081a', 'sig_081b',
-            'sig_081c', 'sig_reserved', 'grp_01', 'grp_02', 'grp_03', 'grp_04', 'grp_05', 'grp_06',
-            'grp_07', 'grp_08', 'grp_09', 'grp_10', 'grp_11', 'grp_12', 'grp_13', 'grp_14',
+            'sig_081c', 'sig_grease', 'sig_empty', 'grp_01', 'grp_02', 'grp_03', 'grp_04', 'grp_05',
+            'grp_06', 'grp_07', 'grp_08', 'grp_09', 'grp_10', 'grp_11', 'grp_12', 'grp_13', 'grp_14',
             'grp_15', 'grp_16', 'grp_17', 'grp_18', 'grp_19', 'grp_20', 'grp_21', 'grp_22',
             'grp_23', 'grp_24', 'grp_25', 'grp_26', 'grp_27', 'grp_28', 'grp_29', 'grp_30',
             'grp_31', 'grp_32', 'grp_33', 'grp_34', 'grp_35', 'grp_36', 'grp_37', 'grp_38',
             'grp_39', 'grp_40', 'grp_41', 'grp_256', 'grp_257', 'grp_258', 'grp_259', 'grp_260',
-            'grp_65281', 'grp_65282', 'pts_00', 'pts_01', 'pts_02', 'svr_ext_00', 'svr_ext_01', 'svr_ext_02',
-            'svr_ext_03', 'svr_ext_04', 'svr_ext_05', 'svr_ext_06', 'svr_ext_07', 'svr_ext_08',
+            'grp_65281', 'grp_65282', 'grp_grease', 'pts_00', 'pts_01', 'pts_02', 'svr_ext_00', 'svr_ext_01',
+            'svr_ext_02','svr_ext_03', 'svr_ext_04', 'svr_ext_05', 'svr_ext_06', 'svr_ext_07', 'svr_ext_08',
             'svr_ext_09', 'svr_ext_10', 'svr_ext_11', 'svr_ext_12', 'svr_ext_13', 'svr_ext_14',
             'svr_ext_15', 'svr_ext_16', 'svr_ext_17', 'svr_ext_18', 'svr_ext_19', 'svr_ext_20',
             'svr_ext_21', 'svr_ext_22', 'svr_ext_23', 'svr_ext_24', 'svr_ext_25', 'svr_ext_26',
@@ -97,7 +98,7 @@ csv_header = ['dom_in_tranco_1m', 'dom_dga_prob', 'otx_status', 'otx_age', 'urlh
             'svr_ext_39', 'svr_ext_40', 'svr_ext_41', 'svr_ext_42', 'svr_ext_43', 'svr_ext_44',
             'svr_ext_45', 'svr_ext_46', 'svr_ext_47', 'svr_ext_48', 'svr_ext_49', 'svr_ext_50',
             'svr_ext_51', 'svr_ext_52', 'svr_ext_53', 'svr_ext_55', 'svr_ext_56', 'svr_ext_65281',
-            'svr_ocsp_staple', 'svr_tls_ver', 'svr_supported_ver']
+            'svr_ext_unassigned', 'svr_ocsp_staple', 'svr_tls_ver', 'svr_supported_ver', 'malware_label']
 
 # Create custom logging class for exceptions
 class OneLineExceptionFormatter(logging.Formatter):
@@ -111,125 +112,49 @@ class OneLineExceptionFormatter(logging.Formatter):
             result = result.replace("\n", "")
         return result
 
-def correlate_data(data_dict, tls_client_entry, tls_server_entry, osint_data):
-    '''
-    Reads in data from netcap TLS files and returns dictionary to insert into CSV file
-    '''
-    test_train_data = data_dict
-
-    try:
-        # OSINT OTX and urlhaus analysis
-        test_train_data['otx_status'] = osint_data[0]['url_status']
-        test_train_data['otx_age'] = osint_data[0]['report_age']
-        test_train_data['urlhaus_status'] = osint_data[1]['url_status']
-        test_train_data['urlhaus_age'] = osint_data[1]['report_age']
-        test_train_data['ja3_urlhaus_status'] = osint_data[2]['ja3_check']
-        test_train_data['ja3_urlhaus_age'] = osint_data[2]['ja3_record_age']
-        test_train_data['dom_in_tranco_1m'] = osint_data[3]
-        test_train_data['dom_dga_prob'] = osint_data[4]
-
-        # Set TLS Client static data fields in test_train_data dict
-        test_train_data['tls_record_type'] = tls_client_entry['Type']
-        test_train_data['client_tls_ver'] = tls_client_entry['Version']
-        test_train_data['message_len'] = tls_client_entry['MessageLen']
-        test_train_data['handshake_type'] = tls_client_entry['HandshakeType']
-        test_train_data['handshake_version'] = tls_client_entry['HandshakeVersion']
-        test_train_data['handshake_len'] = tls_client_entry['HandshakeLen']
-        test_train_data['cs_len'] = tls_client_entry['CipherSuiteLen']
-        test_train_data['ext_len'] = tls_client_entry['ExtensionLen']
-        test_train_data['src_port'] = tls_client_entry['SrcPort']
-        test_train_data['dst_port'] = tls_client_entry['DstPort']
-
-        # Set TLS Server static data fields in test_train_data dict
-        test_train_data['svr_tls_ver'] = tls_server_entry['Version']
-        test_train_data['svr_supported_ver'] = tls_server_entry['SupportedVersion']
-        if tls_server_entry['OCSPStapling'] == 'false':
-            test_train_data['svr_ocsp_staple'] = 0
-        else:
-            test_train_data['svr_ocsp_staple'] = 1
-
-        svr_selected_group = "{:02}".format(int(tls_server_entry['SelectedGroup']))
-        server_cs_used = "{:04x}".format(int(tls_server_entry['CipherSuite']))
-
-        tls_client_entry['CipherSuites'] = tls_client_entry['CipherSuites'][1:-1].split('-')
-        for cs_val in tls_client_entry['CipherSuites']:
-            entry_hex = "{:04x}".format(int(cs_val))
-            cs_entry = "cs_{}".format(entry_hex)
-
-            if cs_entry in test_train_data:
-                test_train_data[cs_entry] += 0.5
-            else:
-                test_train_data['cs_unknown'] += 0.5
-            
-            if entry_hex == server_cs_used:
-                test_train_data[cs_entry] += 0.5
-
-        tls_client_entry['SignatureAlgs'] = tls_client_entry['SignatureAlgs'][1:-1].split('-')
-        sig_reserved_count = 1
-        for sig_data in tls_client_entry['SignatureAlgs']:
-            sig_entry = "sig_{:04x}".format(int(sig_data))
-
-            if sig_entry in test_train_data:
-                test_train_data[sig_entry] = 1
-            else:
-                test_train_data['sig_reserved'] = sig_reserved_count
-                sig_reserved_count += 1
-
-        tls_client_entry['SupportedGroups'] = tls_client_entry['SupportedGroups'][1:-1].split('-')
-        for grp_data in tls_client_entry['SupportedGroups']:
-            grp_val = "{:02}".format(int(grp_data))
-            grp_entry = "grp_{}".format(grp_val)
-            test_train_data[grp_entry] = 0.5
-
-            if grp_val == svr_selected_group:
-                test_train_data[grp_entry] += 0.5
-
-        tls_client_entry['SupportedPoints'] = tls_client_entry['SupportedPoints'][1:-1].split('-')
-        for pts_data in tls_client_entry['SupportedPoints']:
-            pts_entry = "pts_{:02}".format(int(pts_data))
-            test_train_data[pts_entry] = 1
-
-        tls_server_entry['Extensions'] = tls_server_entry['Extensions'][1:-1].split('-')
-        for svr_ext_data in tls_server_entry['Extensions']:
-            svr_ext_entry = "svr_ext_{:02}".format(int(svr_ext_data))
-            test_train_data[svr_ext_entry] = 1
-    except Exception as e:
-        print("There was a problem  -  {}".format(e))
-
-    return test_train_data
-
-def write_csv_file(filename, data):
+def write_csv_file(filename, data, header=False):
     '''
     Write data to csv
     '''
-    try:
-        with open(filename, "a", newline='') as outfile:
-            write_csv = csv.DictWriter(outfile, fieldnames=csv_header)
-            write_csv.writerow(data)
-    except Exception as e:
-        logging.exception("There was a problem in the CSV file write process... {}".format(e))
-        exit(1)
+    if header:
+        try:
+            with open(filename, "w", newline='') as outfile:
+                write_csv = csv.DictWriter(outfile, fieldnames=csv_header)
+                write_csv.writeheader()
+        except Exception as e:
+            logging.exception("There was a problem in the CSV file write process... {}".format(e))
+            exit(1)
+    else:
+        try:
+            with open(filename, "a", newline='') as outfile:
+                write_csv = csv.DictWriter(outfile, fieldnames=csv_header)
+                write_csv.writerow(data)
+        except Exception as e:
+            logging.exception("There was a problem in the CSV file write process... {}".format(e))
+            exit(1)
 
-def pre_format_data(csv_filename, tls_server_list, tls_client_entry):
-    test_train_data_dict = {}
-    tls_server_data_vals = {}
+def correlate_data(csv_filename, tls_server_list, malware_label, API_KEY, out_dir, tls_client_entry):
+    '''
+    Reads in data from netcap TLS files and returns dictionary to insert into CSV file
+    '''
+    test_train_data = {}
     global ip_domain_dict
     ip_domain_value = ""
     tls_osint_list = []
-    #API_KEY = os.environ.get('API_KEY')
-    API_KEY = '0f6b86cdae8180b3a9b26e32dc3224acc7f00e887d8d542de837599df8c7bc6f'
-    tranco_cache_dir = r'C:\Users\bryan\Desktop\.tranco'
+    tranco_cache_dir = os.path.join(out_dir, '.tranco')
 
     # Pre-generate test_train_data_dict with 0 values
     for val in csv_header:
-        test_train_data_dict[val] = 0
+        test_train_data[val] = 0
 
-    for tls_server_entry in tls_server_list:
-        if tls_server_entry['SrcIP'] == tls_client_entry['DstIP'] and tls_server_entry['DstIP'] == tls_client_entry['SrcIP'] and tls_server_entry['DstPort'] == tls_client_entry['SrcPort'] and tls_server_entry['SrcPort'] == tls_client_entry['DstPort']:
-            tls_server_data_vals = tls_server_entry
+    test_train_data['malware_label'] = malware_label
+
+    for tls_server_data in tls_server_list:
+        if tls_server_data['SrcIP'] == tls_client_entry['DstIP'] and tls_server_data['DstIP'] == tls_client_entry['SrcIP'] and tls_server_data['DstPort'] == tls_client_entry['SrcPort'] and tls_server_data['SrcPort'] == tls_client_entry['DstPort']:
+            tls_server_entry = tls_server_data
             ip_domain_value = "{}:{}".format(tls_client_entry['DstIP'], tls_client_entry['SNI'])
             break
-
+    
     # Check to see if key is in the ip_domain_dict (meaning it is an existing entry)
     # If it is, then skip check_ip, otherwise, we'll run it and add the values to the dict
     if ip_domain_value in ip_domain_dict.keys():
@@ -244,28 +169,162 @@ def pre_format_data(csv_filename, tls_server_list, tls_client_entry):
         tls_osint_list.append(ip(API_KEY, dst_ip))
         tls_osint_list.append(hostname(sni, dst_ip))
         tls_osint_list.append(ja3_sslbl_check(tls_client_entry['Ja3']))
-        tls_osint_list.append(dns_tranco_check(tranco_cache_dir, sni, 15))
-        tls_osint_list.append(get_prob(sni))
+
+        # Tranco and dgaintel fail when domain name is empty
+        if not sni == '':
+            tls_osint_list.append(dns_tranco_check(tranco_cache_dir, sni, 15))
+            tls_osint_list.append(get_prob(sni))
+        else:
+            tls_osint_list.append(0)
+            tls_osint_list.append(0)
+
         ip_domain_dict[ip_domain_value] = tls_osint_list
 
-    data_to_write = correlate_data(test_train_data_dict, tls_client_entry, tls_server_data_vals, tls_osint_list)
-    write_csv_file(csv_filename, data_to_write)
+    # OSINT OTX and urlhaus analysis
+    test_train_data['otx_status'] = tls_osint_list[0]['url_status']
+    test_train_data['otx_age'] = tls_osint_list[0]['report_age']
+    test_train_data['urlhaus_status'] = tls_osint_list[1]['url_status']
+    test_train_data['urlhaus_age'] = tls_osint_list[1]['report_age']
+    test_train_data['ja3_urlhaus_status'] = tls_osint_list[2]['ja3_check']
+    test_train_data['ja3_urlhaus_age'] = tls_osint_list[2]['ja3_record_age']
+    test_train_data['dom_in_tranco_1m'] = tls_osint_list[3]
+    test_train_data['dom_dga_prob'] = tls_osint_list[4]
+
+    # Set TLS Client static data fields in test_train_data dict
+    test_train_data['tls_record_type'] = tls_client_entry['Type']
+    test_train_data['client_tls_ver'] = tls_client_entry['Version']
+    test_train_data['message_len'] = tls_client_entry['MessageLen']
+    test_train_data['handshake_type'] = tls_client_entry['HandshakeType']
+    test_train_data['handshake_version'] = tls_client_entry['HandshakeVersion']
+    test_train_data['handshake_len'] = tls_client_entry['HandshakeLen']
+    test_train_data['cs_len'] = tls_client_entry['CipherSuiteLen']
+    test_train_data['ext_len'] = tls_client_entry['ExtensionLen']
+    test_train_data['src_port'] = tls_client_entry['SrcPort']
+    test_train_data['dst_port'] = tls_client_entry['DstPort']
+
+    # Set TLS Server static data fields in test_train_data dict
+    test_train_data['svr_tls_ver'] = tls_server_entry['Version']
+    test_train_data['svr_supported_ver'] = tls_server_entry['SupportedVersion']
+    if tls_server_entry['OCSPStapling'] == 'false':
+        test_train_data['svr_ocsp_staple'] = 0
+    else:
+        test_train_data['svr_ocsp_staple'] = 1
+
+    svr_selected_group = "{:02}".format(int(tls_server_entry['SelectedGroup']))
+    server_cs_used = "{:04x}".format(int(tls_server_entry['CipherSuite']))
+
+    try:
+        # Cipher Suites
+        tls_client_entry['CipherSuites'] = tls_client_entry['CipherSuites'][1:-1].split('-')
+        for cs_val in tls_client_entry['CipherSuites']:
+            entry_hex = "{:04x}".format(int(cs_val))
+
+            cs_entry = "cs_{}".format(entry_hex)
+
+            if cs_entry in test_train_data:
+                test_train_data[cs_entry] += 0.5
+            else:
+                test_train_data['cs_unknown'] += 0.5
+            
+            if entry_hex == server_cs_used:
+                test_train_data[cs_entry] += 0.5
+
+        # Signature Algorithms
+        tls_client_entry['SignatureAlgs'] = tls_client_entry['SignatureAlgs'][1:-1].split('-')
+
+        if not tls_client_entry['SignatureAlgs'][0]:
+            tls_client_entry['SignatureAlgs'] = ['0']
+
+        sig_reserved_count = 1
+        for sig_data in tls_client_entry['SignatureAlgs']:
+            sig_entry = "sig_{:04x}".format(int(sig_data))
+
+            if sig_entry in test_train_data:
+                test_train_data[sig_entry] = 1
+            elif sig_entry == 'sig_0000':
+                test_train_data['sig_empty'] = 1
+            else:
+                test_train_data['sig_grease'] = sig_reserved_count
+                sig_reserved_count += 1
+
+        # Supported Groups
+        tls_client_entry['SupportedGroups'] = tls_client_entry['SupportedGroups'][1:-1].split('-')
+        for grp_data in tls_client_entry['SupportedGroups']:
+            grp_val = "{:02}".format(int(grp_data))
+
+            grp_entry = "grp_{}".format(grp_val)
+
+            if grp_val in test_train_data:
+                test_train_data[grp_entry] = 0.5
+            else:
+                grp_entry = 'grp_grease'
+                test_train_data[grp_entry] += 0.5
+
+            if grp_val == svr_selected_group:
+                test_train_data[grp_entry] += 0.5
+
+        # Supported Points
+        if tls_client_entry['SupportedPoints'][0] == '(':
+            tls_client_entry['SupportedPoints'] = tls_client_entry['SupportedPoints'][1:-1].split('-')
+        else:
+            tls_client_entry['SupportedPoints'] = [tls_client_entry['SupportedPoints']]
+
+        for pts_data in tls_client_entry['SupportedPoints']:
+            pts_entry = "pts_{:02}".format(int(pts_data))
+            test_train_data[pts_entry] = 1
+
+        # Server Extensions
+        if tls_server_entry['Extensions'][0] == '(':
+            tls_server_entry['Extensions'] = tls_server_entry['Extensions'][1:-1].split('-')
+        else:
+            tls_server_entry['Extensions'] = [tls_server_entry['Extensions'][1:]]
+
+        if tls_server_entry['Extensions'][0] == '':
+            tls_server_entry['Extensions'] = ['0']
+
+        for svr_ext_data in tls_server_entry['Extensions']:
+            svr_ext_entry = "svr_ext_{:02}".format(int(svr_ext_data))
+
+            if svr_ext_entry in test_train_data:
+                test_train_data[svr_ext_entry] = 1
+            else:
+                test_train_data['svr_ext_unassigned'] += 0.5
+
+    except Exception as e:
+        print("The problem is with a loop...  -  {}".format(e))
+
+    write_csv_file(csv_filename, test_train_data)    
 
 def main():
-    csv_filename = r'C:\Users\bryan\Desktop\test_train_data.csv'
+    '''
+    Gather data from the TLSClientHello and TLSServerHello CSV files generated from NetCap
+    '''
+    # Get a label value for known data
+    parser = argparse.ArgumentParser(description='Get label input for data analysis')
+    parser.add_argument('-l', '--label', action='store', dest='label', default=0, help='Is this data known malicious or not?', required=False)
+    parser.add_argument('-o', '--outfile', action='store', dest='out_file', default='test_train_data.csv',
+                        help='Name of the output file', required=False)
+    parser.add_argument('-c', '--client-file', action='store', dest='client_file', default='TLSClientHello.csv',
+                        help='Name of the TLS Client Hello (TLSClientHello.csv) file created with NetCap', required=False)
+    parser.add_argument('-s', '--server-file', action='store', dest='server_file', default='TLSServerHello.csv',
+                        help='Name of the TLS Server Hello (TLSServerHello.csv) file created with NetCap', required=False)
+    parser.add_argument('-a', '--api-key', action='store', dest='api', default='0f6b86cdae8180b3a9b26e32dc3224acc7f00e887d8d542de837599df8c7bc6f',
+                        help='API Key value required for Alienvault OTX', required=False)
+
+    options = parser.parse_args()
+
     base_log_dir = os.getcwd()
-    tls_client_file = os.path.join(base_log_dir, 'TLSClientHello.csv')
-    tls_server_file = os.path.join(base_log_dir, 'TLSServerHello.csv')
+    out_dir = r'C:\Users\bryan\Desktop'
+    csv_filename = os.path.join(out_dir, options.out_file)
+    tls_client_file = os.path.join(base_log_dir, options.client_file)
+    tls_server_file = os.path.join(base_log_dir, options.server_file)
     tls_server_list = []
+    malicious_label = options.label
+    #API_KEY = os.environ.get('API_KEY')
+    API_KEY = options.api
 
     if not os.path.exists(csv_filename):
-        try:
-            with open(csv_filename, "w", newline='') as outfile:
-                write_csv = csv.DictWriter(outfile, fieldnames=csv_header)
-                write_csv.writeheader()
-        except Exception as e:
-            logging.exception("There was a problem in the CSV file write process... {}".format(e))
-            exit(1)
+        write_csv_file(csv_filename, csv_header, True)
 
     with open(tls_server_file, 'r', newline='') as tls_server_data:
         tls_server_csv = csv.DictReader(tls_server_data)
@@ -273,7 +332,7 @@ def main():
             tls_server_list.append(line)
 
     with ProcessPoolExecutor() as executor:
-        fn = partial(pre_format_data, csv_filename, tls_server_list)
+        fn = partial(correlate_data, csv_filename, tls_server_list, malicious_label, API_KEY, out_dir)
         with open(tls_client_file, 'r', newline='') as tls_client_data:
             tls_client_csv = csv.DictReader(tls_client_data)
             executor.map(fn, tls_client_csv, timeout=86400)

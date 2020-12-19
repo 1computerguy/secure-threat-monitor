@@ -9,6 +9,7 @@ import os
 import time
 import logging
 import csv
+import ipaddress
 
 from datetime import date, datetime, timedelta
 from dateutil.parser import parse
@@ -52,6 +53,13 @@ def date_range(start_date, end_date):
     
     return dates
 
+def is_ipv4(string):
+    try:
+        ipaddress.IPv4Network(string)
+        return True
+    except ValueError:
+        return False
+
 def ip(api_key, ip):
     '''
     Query AlienVault OTX for malicious IP checking
@@ -61,28 +69,31 @@ def ip(api_key, ip):
     report_age = 0
     url_status = 0
 
-    # Set URLs and instantiate OTX object
-    OTX_SERVER = 'https://otx.alienvault.com/'
-    otx = OTXv2(api_key, server=OTX_SERVER)
+    if ipaddress.ip_address(ip).is_private:
+        alerts = {'url_status': 0, 'report_age': 0}
+    else:
+        # Set URLs and instantiate OTX object
+        OTX_SERVER = 'https://otx.alienvault.com/'
+        otx = OTXv2(api_key, server=OTX_SERVER)
 
-    try:
-        result = otx.get_indicator_details_full(IndicatorTypes.IPv4, ip)
-        pulses = getValue(result['general'], ['pulse_info', 'pulses'])
-        if pulses:
-            full_url_list = getValue(result['passive_dns'], ['passive_dns'])
-            if full_url_list:
-                first_reported = datetime.strptime(full_url_list[-1]['first'], "%Y-%m-%dT%H:%M:%S+00:00")
-                last_reported = datetime.strptime(full_url_list[0]['last'], "%Y-%m-%dT%H:%M:%S+00:00")
-                report_age = int(((last_reported - first_reported).total_seconds() / 86400))
-            else:
-                report_age = 0
-            url_status = 1
+        try:
+            result = otx.get_indicator_details_full(IndicatorTypes.IPv4, ip)
+            pulses = getValue(result['general'], ['pulse_info', 'pulses'])
+            if pulses:
+                full_url_list = getValue(result['passive_dns'], ['passive_dns'])
+                if full_url_list:
+                    first_reported = datetime.strptime(full_url_list[-1]['first'], "%Y-%m-%dT%H:%M:%S+00:00")
+                    last_reported = datetime.strptime(full_url_list[0]['last'], "%Y-%m-%dT%H:%M:%S+00:00")
+                    report_age = int(((last_reported - first_reported).total_seconds() / 86400))
+                else:
+                    report_age = 0
+                url_status = 1
 
-    except Exception as e:
-        logger.exception(" :  You received this error with the OTX API Data... {}".format(e))
+        except Exception as e:
+            logger.exception(" :  You received this error with the OTX API Data... {}".format(e))
 
-    # Build alerts dictionary from variables
-    alerts = {'url_status': url_status, 'report_age': report_age}
+        # Build alerts dictionary from variables
+        alerts = {'url_status': url_status, 'report_age': report_age}
 
     return alerts
 
@@ -98,7 +109,10 @@ def hostname(host, ip_addr, query_two=False):
 
     # URL haus API URL
     urlhaus_api = "https://urlhaus-api.abuse.ch/v1/"
-    
+
+    if is_ipv4(ip_addr) and ipaddress.ip_address(ip_addr).is_private:
+        query_two = True
+
     try:
         query_urlhaus = requests.post("{}host/".format(urlhaus_api), headers={"User-Agent" : "urlhaus-python-client-{}".format(__version__)}, data={"host": host})
         if query_urlhaus.ok:
