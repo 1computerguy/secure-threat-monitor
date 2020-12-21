@@ -132,21 +132,8 @@ def autoencoded_features (data, label, graph, final_features):
     set_seed(2)
     SEED = 123
     DATA_SPLIT_PCT = 0.2
-    #malware = data[data.malware_label == 1]
-    #benign = data[data.malware_label == 0]
-    #percent = int(len(malware) * (benign_percent / 100))
-    #benign = benign.sample(n=percent)
-    #malware = malware.sample(n=percent)
-    #data = benign.append(malware).reset_index()
-
-    # Prune and scale dataset for analysis
-    #label_col = data[label]
-    #data = data.drop([label], axis=1)
-    #features = list(data.columns)
-    #data[features] = MinMaxScaler().fit_transform(data[features])
 
     # Split into training and testing datasets
-    #x_train, x_test, y_train, y_test = train_test_split(data[features], label_col, test_size=0.3, random_state=1)
     x_train, x_test = train_test_split(data, test_size=DATA_SPLIT_PCT, random_state=SEED)
     x_train, x_valid = train_test_split(x_train, test_size=DATA_SPLIT_PCT, random_state=SEED)
     
@@ -172,17 +159,6 @@ def autoencoded_features (data, label, graph, final_features):
 
     x_test_0_x_rescaled = scaler.transform(x_test_0_x)
     x_test_x_rescaled = scaler.transform(x_test.drop([label], axis=1))
-
-    # Create set of negative outcomes only
-    #x_train_1 = x_train.copy()
-    #x_train_1[label] = y_train
-    #x_train_1 = x_train_1[x_train_1[label] == 1]
-    #x_train_1 = x_train_1.drop(label, axis=1)
-    #
-    #x_test_1 = x_test.copy()
-    #x_test_1[label] = y_test
-    #x_test_1 = x_test_1[x_test_1[label] == 1]
-    #x_test_1 = x_test_1.drop(label, axis=1)
 
     # Autoencoder values
     learning_epochs = 200
@@ -211,31 +187,24 @@ def autoencoded_features (data, label, graph, final_features):
     autoencoder.compile(metrics=['accuracy'], loss='mean_squared_error', optimizer='adam')
     write_model = ModelCheckpoint(filepath=r'C:\Users\bryan\Desktop\ae_dadta\model\ae_calssifier.h5', save_best_only=True, verbose=0)
     write_logs = TensorBoard(log_dir=r'C:\Users\bryan\Desktop\ae_dadta\logs', histogram_freq=0, write_graph=True, write_images=True)
-    #history = autoencoder.fit(x_train_1, x_train_1,
     history = autoencoder.fit(x_train_0_x_rescaled, x_train_0_x_rescaled,
                             epochs=learning_epochs,
                             batch_size=batch_size,
-                            #validation_data=(x_test_1, x_test_1),
                             validation_data=(x_valid_0_x_rescaled, x_valid_0_x_rescaled),
                             verbose=1,
                             callbacks=[write_model, write_logs]).history
     
-    #test_x_predictions = autoencoder.predict(x_test)
     valid_x_predictions = autoencoder.predict(x_valid_x_rescaled)
-    #mse = np.mean(np.power(x_test - test_x_predictions, 2), axis=1)
     mse = np.mean(np.power(x_valid_x_rescaled - valid_x_predictions, 2), axis=1)
-    
-    #error_df_test = pd.DataFrame({'Reconstruction_error': mse, 'True_class': y_test})
-    #error_df_test = error_df_test.reset_index()
+
     error_df = pd.DataFrame({'Reconstruction_error': mse, 'True_class': x_valid[label]})
     false_pos_rate, true_pos_rate, thresholds = roc_curve(error_df['True_class'], error_df['Reconstruction_error'])
     threshold = np.mean(thresholds)
     threshold_fixed = float("{:0.4f}".format(threshold))
     roc_auc = auc(false_pos_rate, true_pos_rate,)
-    print('MSE: ', mse)
-    #print('Y val counts: ', y_test.value_counts())
-    print('Threshold mean:', threshold)
-    print('AUC: ', auc(false_pos_rate, true_pos_rate))
+    #print('MSE: ', mse)
+    #print('Threshold mean:', threshold)
+    #print('AUC: ', auc(false_pos_rate, true_pos_rate))
 
     if graph == 'loss':
         plt.plot(history['loss'])
@@ -287,36 +256,42 @@ def autoencoded_features (data, label, graph, final_features):
         plt.ylabel('True Positive Rating')
         plt.xlabel('False Positive Rate')
         plt.show()
-#    ae_input_features = len(data.columns)
-#    round_one_hidden_units = 150
-#    round_two_hidden_units = 100
-#    round_three_hidden_units = 50
-#    round_four_hidden_units = final_features
+    ##################################################################
+    #
+    # The below section left for reference. Shows how to use reduced variable reproduction of AE
+    #
+    ##################################################################
+    #ae_input_features = len(data.columns)
+    #round_one_hidden_units = 150
+    #round_two_hidden_units = 100
+    #round_three_hidden_units = 50
+    #round_four_hidden_units = final_features
 
-#    ae_inputs = tf.keras.Input(shape=(ae_input_features,))
-#    ae_encoded = layers.Dense(round_one_hidden_units, activation='relu',
-#                        activity_regularizer=regularizers.l1(10e-5))(ae_inputs)
-#    ae_encoded = layers.Dense(round_two_hidden_units, activation='relu',
-#                        activity_regularizer=regularizers.l1(10e-5))(ae_encoded)
-#    ae_encoded = layers.Dense(round_three_hidden_units, activation='relu',
-#                        activity_regularizer=regularizers.l1(10e-5))(ae_encoded)
-#    ae_encoded = layers.Dense(round_four_hidden_units, activation='relu',
-#                        activity_regularizer=regularizers.l1(10e-5))(ae_encoded)
+    #ae_inputs = tf.keras.Input(shape=(ae_input_features,))
+    #ae_encoded = layers.Dense(round_one_hidden_units, activation='relu',
+    #                    activity_regularizer=regularizers.l1(10e-5))(ae_inputs)
+    #ae_encoded = layers.Dense(round_two_hidden_units, activation='relu',
+    #                    activity_regularizer=regularizers.l1(10e-5))(ae_encoded)
+    #ae_encoded = layers.Dense(round_three_hidden_units, activation='relu',
+    #                    activity_regularizer=regularizers.l1(10e-5))(ae_encoded)
+    #ae_encoded = layers.Dense(round_four_hidden_units, activation='relu',
+    #                    activity_regularizer=regularizers.l1(10e-5))(ae_encoded)
 
-#    encoder = Model(inputs=ae_inputs, outputs=ae_encoded)
-#    encoded_data = pd.DataFrame(encoder.predict(data))
-#    cols = []
-#    for col in range(final_features):
-#        col_name = 'feat_{}'.format(col)
-#        cols.append(col_name)
+    #encoder = Model(inputs=ae_inputs, outputs=ae_encoded)
+    #encoded_data = pd.DataFrame(encoder.predict(data))
+    #cols = []
+    #for col in range(final_features):
+    #    col_name = 'feat_{}'.format(col)
+    #    cols.append(col_name)
 
-#    encoded_data.columns = cols
-#    if graph == 'pairwise':
-#        sns.pairplot(encoded_data, kind='scatter', markers=['o', 's'], palette='Set2')
-#    elif graph == 'heatmap':
-#        correlation = encoded_data.corr()
-#        sns.heatmap(correlation, annot=True, fmt='.2f', cmap = 'coolwarm')
-#    plt.show()
+    #encoded_data.columns = cols
+    #if graph == 'pairwise':
+    #    sns.pairplot(encoded_data, kind='scatter', markers=['o', 's'], palette='Set2')
+    #elif graph == 'heatmap':
+    #    correlation = encoded_data.corr()
+    #    sns.heatmap(correlation, annot=True, fmt='.2f', cmap = 'coolwarm')
+    #plt.show()
+
 
 
 #def load_input (csv_data_file):
