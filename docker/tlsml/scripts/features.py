@@ -3,7 +3,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+import pingouin as pg
 
+from scipy.stats import bartlett, levene
 from tensorflow.keras.layers import Input, Dense
 from tensorflow.keras.models import Model
 from tensorflow.keras import regularizers
@@ -11,10 +13,14 @@ from tensorflow.random import set_seed
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard, LearningRateScheduler
 from sklearn.metrics import confusion_matrix, precision_recall_curve, recall_score, classification_report, auc, roc_curve, accuracy_score, precision_recall_fscore_support, f1_score
 from numpy.random import seed
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import SelectFromModel
+from factor_analyzer import FactorAnalyzer
+from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calculate_kmo
 
 # To import as module for testing:
 # from importlib import import_module, reload
@@ -104,7 +110,7 @@ def mal_ben_hist (data, label, graph_set, benign_percent):
     plt.show()
 
 
-def calculate_pca (data, label, graph):
+def calculate_pca (data, label, components=10, graph=None):
     features = data.columns
     # Remove features from data
     data_vals = data.loc[:, features].values
@@ -114,7 +120,7 @@ def calculate_pca (data, label, graph):
     std_data = MinMaxScaler().fit_transform(data_vals)
 
     # Calculate the 10 most important components
-    pca = PCA(n_components = 10)
+    pca = PCA(n_components = components)
     data_pca_vals = pca.fit_transform(std_data)
     pca_dataframe = pd.DataFrame(data = data_pca_vals)
     final_pca_dataframe = pd.concat([pca_dataframe, data[[label]]], axis=1)
@@ -122,11 +128,14 @@ def calculate_pca (data, label, graph):
     if graph == 'heatmap':
         correlation = final_pca_dataframe.corr()
         sns.heatmap(correlation, annot=True, fmt='.2f', cmap = 'coolwarm')
+        plt.show()
     elif graph == 'pairplot':
         sns.pairplot(final_pca_dataframe, kind='scatter', hue=label, markers=['o', 's'], palette='Set2')
-    plt.show()
+        plt.show()
 
-def autoencoded_features (data, label, graph, final_features):
+    return pd.DataFrame(std_data, columns=data.columns)
+
+def autoencoded_features (data, label, final_features, graph=None):
     # Balance dataset based on percentage passed to function
     seed(1)
     set_seed(2)
@@ -256,6 +265,8 @@ def autoencoded_features (data, label, graph, final_features):
         plt.ylabel('True Positive Rating')
         plt.xlabel('False Positive Rate')
         plt.show()
+    
+    return 
     ##################################################################
     #
     # The below section left for reference. Shows how to use reduced variable reproduction of AE
@@ -292,7 +303,54 @@ def autoencoded_features (data, label, graph, final_features):
     #    sns.heatmap(correlation, annot=True, fmt='.2f', cmap = 'coolwarm')
     #plt.show()
 
+def random_forest(data, label, estimators, graph=None):
+    seed(1)
+    set_seed(2)
+    SEED = 123
+    DATA_SPLIT_PCT = 0.3
+    data_label = data.malware_label
+    data = data.drop(label, axis=1)
+    features = data.columns
 
+    # Standardize the dataset
+    std_data = MinMaxScaler().fit_transform(data)
+
+    x_train, x_test, train_labels, test_labels = train_test_split(std_data, data_label, random_state=SEED, test_size=DATA_SPLIT_PCT)
+
+    regressor = RandomForestClassifier(n_estimators=estimators, random_state=SEED)
+    regressor.fit(x_train, train_labels)
+    predictions = regressor.predict(x_test)
+    feat_series = regressor.feature_importances_
+
+    if graph == 'bar':
+        pd.Series(feat_series, index=features).nlargest(50).plot(kind='barh').invert_yaxis()
+        plt.show()
+
+    feature_list = [(feature, round(importance, 2)) for feature, importance in zip(list(features), list(feat_series))]
+    #sorted_features = sorted(feature_list, key = lambda x: x[1], reverse = True)
+    #[print('Feature: {:20} Importance: {}'.format(*pair)) for pair in sorted_features]
+    top_10_feature_list = []
+    for val_tuple in feature_list:
+        if val_tuple[1] >= 0.03:
+            top_10_feature_list.append(val_tuple[0])
+
+    final_data = data[top_10_feature_list]
+    final_data = pd.DataFrame(MinMaxScaler().fit_transform(final_data), columns=top_10_feature_list)
+    final_data = pd.concat([data_label, final_data], axis=1)
+    return final_data
+    
+def factor_analysis(data, label, eq_var=True):
+    np.seterr(divide='raise')
+    for feature in data.columns:
+        try:
+            bart_vals = pg.homoscedasticity(data, dv=feature, group='malware_label', method='bartlett')
+            lev_vals = pg.homoscedasticity(data, dv=feature, group='malware_label')
+            if bart_vals['equal_var'].values[0] == eq_var:
+                print("Bartlett Value feature: {}\nT Value: {}\nP Value: {}".format(feature, bart_vals['T'].values[0], bart_vals['pval'].values[0]))
+            elif lev_vals['equal_var'].values[0] == eq_var:
+                print("Levene Value feature: {}\nT Value: {}\nP Value: {}".format(feature, bart_vals['T'].values[0], bart_vals['pval'].values[0]))
+        except Exception as e:
+            pass
 
 #def load_input (csv_data_file):
 csv_data_file = 'test_train_data-all.csv'

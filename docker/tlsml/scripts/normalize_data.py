@@ -7,7 +7,7 @@ from tensorflow.keras import layers
 from tensorflow.keras import regularizers
 
 scaler = MinMaxScaler()
-csv_file = "test_train_data.csv"
+csv_file = "test_train_data-all.csv"
 dataset = read_csv(csv_file)
 normalized_data = scaler.fit_transform(dataset)
 
