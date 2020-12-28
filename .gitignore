@@ -30,7 +30,6 @@ __pycache__/
 *.mmdb
 
 NetCap-data-format.json
-TLSClientHello.json
-TLSServerHello.json
 TLSClientHello.csv
 TLSServerHello.csv
+docker/tlsml/scripts/mal/
